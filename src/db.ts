@@ -1,4 +1,5 @@
 import pg, { Pool, PoolClient } from "pg";
+import { MigrationRow } from "./types";
 
 pg.types.setTypeParser(1114, function (stringValue) {
   return stringValue; //1114 for time without timezone type
@@ -52,7 +53,7 @@ export const dbMigrationHistory = async (
   const migrationsQuery = await client.query(
     `SELECT * FROM ${schema}.stepwise_migrations`
   );
-  return migrationsQuery.rows;
+  return migrationsQuery.rows as MigrationRow[];
 };
 
 export const dbCreateSchema = async (client: PoolClient, schema: string) => {
@@ -69,7 +70,7 @@ export const dbCreateHistoryTable = async (
   await client.query(
     `CREATE TABLE IF NOT EXISTS ${schema}.stepwise_migrations (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT UNIQUE NOT NULL,
     hash TEXT NOT NULL,
     applied_by TEXT NOT NULL DEFAULT current_user,
     applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP

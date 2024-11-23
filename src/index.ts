@@ -9,8 +9,17 @@ import {
   dbMigrationHistory,
   dbTableExists,
 } from "./db";
-import { applyMigration, validateMigrationFiles } from "./migrate";
-import { readMigrationFiles, validateArgs } from "./utils";
+import {
+  applyDownMigration,
+  applyMigration,
+  validateDownMigrationFiles,
+  validateMigrationFiles,
+} from "./migrate";
+import {
+  readDownMigrationFiles,
+  readMigrationFiles,
+  validateArgs,
+} from "./utils";
 
 const main = async () => {
   const argv: any = yargs(process.argv.slice(2)).argv;
@@ -25,6 +34,7 @@ const main = async () => {
   const tableExists = await dbTableExists(client, schema);
 
   if (command === "migrate") {
+    const nUp = argv.nup || Infinity;
     if (!historySchemaExists) {
       await dbCreateSchema(client, schema);
     }
@@ -38,12 +48,18 @@ const main = async () => {
 
     validateMigrationFiles(migrationFiles, migrationHistory);
 
-    const migrationsToApply = migrationFiles.slice(migrationHistory.length);
+    const migrationsToApply = migrationFiles.slice(
+      migrationHistory.length,
+      migrationHistory.length + nUp
+    );
 
     for (const { filename, contents, hash } of migrationsToApply) {
       await applyMigration(client, schema, filename, contents, hash);
     }
-    console.log("\nAll done!");
+
+    console.log("All done!");
+    console.log("New migration history:");
+    console.table(await dbMigrationHistory(client, schema));
   } else if (command === "info") {
     console.log(
       "Showing information about the current state of the migrations in the database"
@@ -61,7 +77,37 @@ const main = async () => {
   } else if (command === "drop") {
     console.log("Dropping the tables, schema and migration history table");
     await client.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
-    console.log("\nAll done!");
+    console.log("All done!");
+  } else if (command === "down") {
+    const nDown = argv.ndown || 1;
+
+    const migrationHistory = await dbMigrationHistory(client, schema);
+    validateMigrationFiles(
+      await readMigrationFiles(argv.path),
+      migrationHistory,
+      false
+    );
+
+    const reverseMigrationHistory = migrationHistory.reverse().slice(0, nDown);
+    const downMigrationFilesToApply = await readDownMigrationFiles(
+      argv.path,
+      reverseMigrationHistory
+    );
+
+    validateDownMigrationFiles(
+      downMigrationFilesToApply,
+      reverseMigrationHistory
+    );
+    for (const {
+      filename,
+      contents,
+      upFilename,
+    } of downMigrationFilesToApply) {
+      await applyDownMigration(client, schema, filename, contents, upFilename);
+    }
+    console.log("All done!");
+    console.log("New migration history:");
+    console.table(await dbMigrationHistory(client, schema));
   }
 
   client.release();
