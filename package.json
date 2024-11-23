@@ -14,6 +14,6 @@
     "@types/yargs": "^17.0.33"
   },
   "bin": {
-    "stepwise-migrations": "./dist/index.js"
+    "stepwise-migrations": "dist/index.js"
   }
 }
