@@ -1,8 +1,7 @@
 # Stepwise Migrations
 
-A tool for managing migrations in a Postgres database.
-Loosely based, but in Typescript.
-
+A tool for managing Raw SQL migrations in a Postgres database.
+Loosely based on flyway.
 Only "up" migrations are supported so far, but what more do you need?
 
 ## Usage

@@ -1,13 +1,18 @@
 {
   "name": "stepwise-migrations",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
     "build": "tsc"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "migrations",
+    "postgres",
+    "raw sql",
+    "sql"
+  ],
+  "author": "github.com/mj1618",
   "license": "MIT",
   "devDependencies": {
     "@types/pg": "^8.11.10",
