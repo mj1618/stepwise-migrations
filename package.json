@@ -1,0 +1,19 @@
+{
+  "name": "stepwise-migrations",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/pg": "^8.11.10",
+    "@types/yargs": "^17.0.33"
+  },
+  "bin": {
+    "stepwise-migrations": "./dist/index.js"
+  }
+}
