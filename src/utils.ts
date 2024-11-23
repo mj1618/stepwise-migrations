@@ -29,11 +29,10 @@ Options:
   --ndown                    Number of down migrations to apply (default: 1)
 
 Example:
-  npx stepwise-migrations \
+  npx stepwise-migrations migrate \
     --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase \
     --schema=myschema \
-    --path=./db/migration/ \
-    migrate
+    --path=./db/migration/
 `;
 
 export const validateArgs = (argv: any) => {
