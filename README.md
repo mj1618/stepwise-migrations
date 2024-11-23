@@ -4,9 +4,17 @@ A tool for managing Raw SQL migrations in a Postgres database.
 Loosely based on flyway.
 Only "up" migrations are supported so far, but what more do you need?
 
+## Notes
+
+All files ending in `.sql` in the migration directory will be applied.
+They are first sorted in ascending order based on filename.
+No subdirectories are read below the migration directory.
+
 ## Usage
 
 ### Migrate
+
+Command:
 
 ```bash
 npx stepwise-migrations migrate \
