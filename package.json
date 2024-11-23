@@ -15,5 +15,9 @@
   },
   "bin": {
     "stepwise-migrations": "dist/index.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1",
+    "yargs": "^17.7.2"
   }
 }
