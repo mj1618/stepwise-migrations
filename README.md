@@ -5,13 +5,13 @@
 A tool for managing Raw SQL migrations in a Postgres database.
 Loosely based on flyway.
 
-## Notes
+## Instructions
 
 Name up migration files as `.sql` and down migration files with the same name but suffixed with `.down.sql`.
 e.g. `v1_users.sql` and `v1_users.down.sql`.
-Down migrations are optional.
+NOTE: Down migrations are optional.
 
-They are first sorted in ascending order based on filename.
+Up migrations are first sorted in ascending order based on filename.
 No subdirectories are read below the migration directory.
 
 ## Usage
