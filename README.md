@@ -61,15 +61,18 @@ npx stepwise-migrations migrate \
 Outputs:
 
 ```
-Connected to the database
-Creating schema collie
-Schema collie created
-Creating migration history table
-Migration history table created
-Found 2 migration files
-Applied migration V0_01__connect_session_table.sql
-Applied migration V0_02__auth.sql
-All done!
+Creating schema myschema... done!
+Creating migration history table... done!
+Applying migration v1_connect_session_table.sql... done!
+Applying migration v2_auth.sql... done!
+All done! Applied 2 migrations
+New migration history:
+┌─────────┬────┬────────────────────────────────┬────────────────────────────────────────────────────────────────────┬────────────┬─────────────────────────────┐
+│ (index) │ id │ name                           │ hash                                                               │ applied_by │ applied_at                  │
+├─────────┼────┼────────────────────────────────┼────────────────────────────────────────────────────────────────────┼────────────┼─────────────────────────────┤
+│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'f08638e58139ae0e2dda24b1bdba29f3f2128597066a23d2bb382d448bbe9d7e' │ 'postgres' │ '2024-11-23 18:29:16.1616'  │
+│ 1       │ 2  │ 'v2_auth.sql'                  │ '0a4c5df39f03df85cb68ef0b297b913d7c15477fa9dcba13b6e0577d88258a8e' │ 'postgres' │ '2024-11-23 18:29:16.16533' │
+└─────────┴────┴────────────────────────────────┴────────────────────────────────────────────────────────────────────┴────────────┴─────────────────────────────┘
 ```
 
 ### Down
@@ -86,19 +89,19 @@ npx stepwise-migrations down \
 Outputs:
 
 ```
-
-Connected to the database
-Applied down migration v2_auth.down.sql
-All done!
+Applying down migration v2_auth.down.sql... done!
+All done! Applied 1 down migration
 New migration history:
-┌─────────┬────┬────────────────────────────────┬────────────────────────────────────────────────────────────────────┬────────────┬──────────────────────────────┐
-│ (index) │ id │ name                           │ hash                                                               │ applied_by │ applied_at                   │
-├─────────┼────┼────────────────────────────────┼────────────────────────────────────────────────────────────────────┼────────────┼──────────────────────────────┤
-│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'f08638e58139ae0e2dda24b1bdba29f3f2128597066a23d2bb382d448bbe9d7e' │ 'postgres' │ '2024-11-23 18:13:36.518495' │
-└─────────┴────┴────────────────────────────────┴────────────────────────────────────────────────────────────────────┴────────────┴──────────────────────────────┘
+┌─────────┬────┬────────────────────────────────┬────────────────────────────────────────────────────────────────────┬────────────┬────────────────────────────┐
+│ (index) │ id │ name                           │ hash                                                               │ applied_by │ applied_at                 │
+├─────────┼────┼────────────────────────────────┼────────────────────────────────────────────────────────────────────┼────────────┼────────────────────────────┤
+│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'f08638e58139ae0e2dda24b1bdba29f3f2128597066a23d2bb382d448bbe9d7e' │ 'postgres' │ '2024-11-23 18:29:16.1616' │
+└─────────┴────┴────────────────────────────────┴────────────────────────────────────────────────────────────────────┴────────────┴────────────────────────────┘
 ```
 
 ### Info
+
+Command:
 
 ```bash
 npx stepwise-migrations info \
@@ -110,20 +113,17 @@ npx stepwise-migrations info \
 Outputs:
 
 ```
-Connected to the database
-Showing information about the current state of the migrations in the database
-Migration history schema exists
-Migration history table exists
 Migration history:
-┌─────────┬────┬────────────────────────────────────┬────────────────────────────────────────────────────────────────────┬────────────┬──────────────────────────────┐
-│ (index) │ id │ name                               │ hash                                                               │ applied_by │ applied_at                   │
-├─────────┼────┼────────────────────────────────────┼────────────────────────────────────────────────────────────────────┼────────────┼──────────────────────────────┤
-│ 0       │ 1  │ 'V0_01__connect_session_table.sql' │ 'f08638e58139ae0e2dda24b1bdba29f3f2128597066a23d2bb382d448bbe9d7e' │ 'postgres' │ '2024-11-23 16:24:50.437496' │
-│ 1       │ 2  │ 'V0_02__auth.sql'                  │ '0a4c5df39f03df85cb68ef0b297b913d7c15477fa9dcba13b6e0577d88258a8e' │ 'postgres' │ '2024-11-23 16:24:50.440493' │
-└─────────┴────┴────────────────────────────────────┴────────────────────────────────────────────────────────────────────┴────────────┴──────────────────────────────┘
+┌─────────┬────┬────────────────────────────────┬────────────────────────────────────────────────────────────────────┬────────────┬────────────────────────────┐
+│ (index) │ id │ name                           │ hash                                                               │ applied_by │ applied_at                 │
+├─────────┼────┼────────────────────────────────┼────────────────────────────────────────────────────────────────────┼────────────┼────────────────────────────┤
+│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'f08638e58139ae0e2dda24b1bdba29f3f2128597066a23d2bb382d448bbe9d7e' │ 'postgres' │ '2024-11-23 18:29:16.1616' │
+└─────────┴────┴────────────────────────────────┴────────────────────────────────────────────────────────────────────┴────────────┴────────────────────────────┘
 ```
 
 ### Drop
+
+Command:
 
 ```bash
 npx stepwise-migrations drop \
@@ -134,7 +134,5 @@ npx stepwise-migrations drop \
 Outputs:
 
 ```
-Connected to the database
-Dropping the tables, schema and migration history table
-All done!
+Dropping the tables, schema and migration history table... done!
 ```

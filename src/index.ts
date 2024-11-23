@@ -44,7 +44,6 @@ const main = async () => {
 
     const migrationHistory = await dbMigrationHistory(client, schema);
     const migrationFiles = await readMigrationFiles(argv.path);
-    console.log(`Found ${migrationFiles.length} migration files`);
 
     validateMigrationFiles(migrationFiles, migrationHistory);
 
@@ -57,27 +56,28 @@ const main = async () => {
       await applyMigration(client, schema, filename, contents, hash);
     }
 
-    console.log("All done!");
+    console.log(`All done! Applied ${migrationsToApply.length} migrations`);
     console.log("New migration history:");
     console.table(await dbMigrationHistory(client, schema));
   } else if (command === "info") {
-    console.log(
-      "Showing information about the current state of the migrations in the database"
-    );
-    console.log(
-      historySchemaExists ? "Schema exists" : "Schema does not exist"
-    );
-    console.log(
-      tableExists
-        ? "Migration history table exists"
-        : "Migration history table does not exist"
-    );
-    console.log("Migration history:");
-    console.table(await dbMigrationHistory(client, schema));
+    if (!historySchemaExists) {
+      console.log("Schema does not exist");
+    }
+
+    if (!tableExists) {
+      console.log("Migration history table does not exist");
+    }
+
+    if (historySchemaExists && tableExists) {
+      console.log("Migration history:");
+      console.table(await dbMigrationHistory(client, schema));
+    }
   } else if (command === "drop") {
-    console.log("Dropping the tables, schema and migration history table");
+    process.stdout.write(
+      `Dropping the tables, schema and migration history table... `
+    );
     await client.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
-    console.log("All done!");
+    console.log(`done!`);
   } else if (command === "down") {
     const nDown = argv.ndown || 1;
 
@@ -105,7 +105,9 @@ const main = async () => {
     } of downMigrationFilesToApply) {
       await applyDownMigration(client, schema, filename, contents, upFilename);
     }
-    console.log("All done!");
+    console.log(
+      `All done! Applied ${downMigrationFilesToApply.length} down migrations`
+    );
     console.log("New migration history:");
     console.table(await dbMigrationHistory(client, schema));
   }

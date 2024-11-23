@@ -49,6 +49,7 @@ export const applyMigration = async (
   hash: string
 ) => {
   try {
+    process.stdout.write(`Applying migration ${filename}... `);
     await client.query("BEGIN");
 
     await client.query(
@@ -63,7 +64,7 @@ export const applyMigration = async (
 
     await client.query("COMMIT");
 
-    console.log(`Applied migration ${filename}`);
+    console.log(`done!`);
   } catch (error) {
     try {
       await client.query("ROLLBACK");
@@ -101,6 +102,7 @@ export const applyDownMigration = async (
   upFilename: string
 ) => {
   try {
+    process.stdout.write(`Applying down migration ${filename}... `);
     await client.query("BEGIN");
 
     await client.query(
@@ -115,7 +117,7 @@ export const applyDownMigration = async (
 
     await client.query("COMMIT");
 
-    console.log(`Applied down migration ${filename}`);
+    console.log(`done!`);
   } catch (error) {
     try {
       await client.query("ROLLBACK");

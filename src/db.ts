@@ -19,7 +19,6 @@ export const dbConnect = async (argv: { connection: string; ssl?: string }) => {
   try {
     client = await pool.connect();
     await client.query("SELECT 1");
-    console.log("Connected to the database");
   } catch (error) {
     console.error("Failed to connect to the database", error);
     process.exit(1);
@@ -57,16 +56,16 @@ export const dbMigrationHistory = async (
 };
 
 export const dbCreateSchema = async (client: PoolClient, schema: string) => {
-  console.log(`Creating schema ${schema}`);
+  process.stdout.write(`Creating schema ${schema}... `);
   await client.query(`CREATE SCHEMA IF NOT EXISTS ${schema}`);
-  console.log(`Schema ${schema} created`);
+  console.log(`done!`);
 };
 
 export const dbCreateHistoryTable = async (
   client: PoolClient,
   schema: string
 ) => {
-  console.log(`Creating migration history table`);
+  process.stdout.write(`Creating migration history table... `);
   await client.query(
     `CREATE TABLE IF NOT EXISTS ${schema}.stepwise_migrations (
     id SERIAL PRIMARY KEY,
@@ -76,5 +75,5 @@ export const dbCreateHistoryTable = async (
     applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     )`
   );
-  console.log(`Migration history table created`);
+  console.log(`done!`);
 };
