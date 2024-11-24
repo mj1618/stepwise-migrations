@@ -1,6 +1,6 @@
 # Stepwise Migrations
 
-[![npm version](https://badge.fury.io/js/stepwise-migrations.svg?icon=si%3Anpm)](https://badge.fury.io/js/stepwise-migrations)
+[![npm version](https://badge.fury.io/js/stepwise-migrations.svg?icon=si%3Anpm&)](https://badge.fury.io/js/stepwise-migrations)
 
 A tool for managing Raw SQL migrations in a Postgres database.
 Loosely based on flyway.
