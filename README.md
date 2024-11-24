@@ -16,7 +16,7 @@ No subdirectories are read below the migration directory.
 
 ## Usage
 
-```
+```text
 Usage: stepwise-migrations [command] [options]
 
 Commands:
@@ -64,6 +64,31 @@ npx stepwise-migrations migrate \
   --path=./db/migration/
 ```
 
+<details>
+
+<summary>Example output</summary>
+
+```text
+Creating schema myschema... done!
+Creating migration history table... done!
+Applying migration v1_connect_session_table.sql... done!
+Applying migration v2_auth.sql... done!
+All done! Applied 2 migrations
+Migration history:
+┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ name                           │ applied_by │ applied_at                   │
+├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'postgres' │ '2024-11-24 05:40:41.211617' │
+│ 1       │ 2  │ 'v2_auth.sql'                  │ 'postgres' │ '2024-11-24 05:40:41.214732' │
+└─────────┴────┴────────────────────────────────┴────────────┴──────────────────────────────┘
+Unapplied migrations:
+┌─────────┐
+│ (index) │
+├─────────┤
+```
+
+</details>
+
 ### Down
 
 Runs a single down migration for the last applied migration.
@@ -78,6 +103,29 @@ npx stepwise-migrations down \
   --path=./db/migration/
 ```
 
+<details>
+
+<summary>Example output</summary>
+
+```text
+Applying down migration v2_auth.down.sql... done!
+All done! Applied 1 down migration
+Migration history:
+┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ name                           │ applied_by │ applied_at                   │
+├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'postgres' │ '2024-11-24 05:40:41.211617' │
+└─────────┴────┴────────────────────────────────┴────────────┴──────────────────────────────┘
+Unapplied migrations:
+┌─────────┬───────────────┐
+│ (index) │ filename      │
+├─────────┼───────────────┤
+│ 0       │ 'v2_auth.sql' │
+└─────────┴───────────────┘
+```
+
+</details>
+
 ### Validate
 
 Validates the migration files and the migration history table.
@@ -89,6 +137,46 @@ npx stepwise-migrations validate \
   --path=./db/migration/
 ```
 
+<details>
+
+<summary>Example output - validation passed</summary>
+
+```text
+Validation passed
+Migration history:
+┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ name                           │ applied_by │ applied_at                   │
+├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'postgres' │ '2024-11-24 05:40:41.211617' │
+└─────────┴────┴────────────────────────────────┴────────────┴──────────────────────────────┘
+Unapplied migrations:
+┌─────────┬───────────────┐
+│ (index) │ filename      │
+├─────────┼───────────────┤
+│ 0       │ 'v2_auth.sql' │
+└─────────┴───────────────┘
+```
+
+</details>
+
+<details>
+
+<summary>Example output - script changed error</summary>
+
+```sql
+Error: migration v1_connect_session_table.sql has been modified, aborting.
+ 	"expire" timestamp(6) NOT NULL
+ )
+ WITH (OIDS=FALSE);
+-ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+\ No newline at end of file
++ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
++
++ALTER TABLE "session" ADD INDEX "session_sid" ON "session" (sid);
+```
+
+</details>
+
 ### Audit
 
 Shows the audit history for the migrations in the database.
@@ -99,6 +187,23 @@ npx stepwise-migrations audit \
   --schema=myschema \
   --path=./db/migration/
 ```
+
+<details>
+
+<summary>Example output</summary>
+
+```text
+Audit history:
+┌─────────┬────┬────────┬────────────────────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ type   │ name                           │ applied_by │ applied_at                   │
+├─────────┼────┼────────┼────────────────────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 1  │ 'up'   │ 'v1_connect_session_table.sql' │ 'postgres' │ '2024-11-24 05:40:41.211617' │
+│ 1       │ 2  │ 'up'   │ 'v2_auth.sql'                  │ 'postgres' │ '2024-11-24 05:40:41.214732' │
+│ 2       │ 3  │ 'down' │ 'v2_auth.down.sql'             │ 'postgres' │ '2024-11-24 05:41:34.541462' │
+└─────────┴────┴────────┴────────────────────────────────┴────────────┴──────────────────────────────┘
+```
+
+</details>
 
 ### Info
 
@@ -113,6 +218,51 @@ npx stepwise-migrations info \
   --path=./db/migration/
 ```
 
+<details>
+
+<summary>Example output</summary>
+
+```text
+Migration history:
+┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ name                           │ applied_by │ applied_at                   │
+├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'postgres' │ '2024-11-24 05:40:41.211617' │
+└─────────┴────┴────────────────────────────────┴────────────┴──────────────────────────────┘
+```
+
+</details>
+
+### Get Script
+
+Gets the script for the last applied migration.
+Can get the script for a specific migration if the `--filename` option is provided.
+
+Command:
+
+```bash
+npx stepwise-migrations get-script --filename v2_auth.sql \
+  --connection=postgresql://postgres:postgres@127.0.0.1:5432/colliedb \
+  --schema=collie \
+  --path=./db/migration/
+```
+
+<details>
+
+<summary>Example output</summary>
+
+```sql
+CREATE TABLE "users" (
+	id bigserial primary key,
+	email text unique not null,
+	first_name text not null,
+	last_name text not null,
+	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+```
+
+</details>
+
 ### Drop
 
 Drops the tables, schema and migration history table.
@@ -125,16 +275,12 @@ npx stepwise-migrations drop \
   --schema=myschema
 ```
 
-### Get Script
+<details>
 
-Gets the script for the last applied migration.
-Can get the script for a specific migration if the `--filename` option is provided.
+<summary>Example output</summary>
 
-Command:
-
-```bash
-npx stepwise-migrations get-script \
-  --filename v1_users.sql \
-  --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
-  --schema=myschema
+```text
+Dropping the tables, schema and migration history table... done!
 ```
+
+</details>
