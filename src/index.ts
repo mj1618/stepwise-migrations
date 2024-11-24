@@ -2,6 +2,8 @@
 
 import yargs from "yargs";
 import {
+  applyDownMigration,
+  applyMigration,
   dbAuditHistory,
   dbConnect,
   dbCreateHistoryTable,
@@ -12,12 +14,6 @@ import {
   dbTableExists,
 } from "./db";
 import {
-  applyDownMigration,
-  applyMigration,
-  validateDownMigrationFiles,
-  validateMigrationFiles,
-} from "./migrate";
-import {
   printMigrationHistory,
   printMigrationHistoryAndUnappliedMigrations,
   readDownMigrationFiles,
@@ -25,6 +21,7 @@ import {
   usage,
   validateArgs,
 } from "./utils";
+import { validateMigrationFiles } from "./validate";
 
 const main = async () => {
   const argv: any = yargs(process.argv.slice(2)).argv;
@@ -117,8 +114,7 @@ const main = async () => {
     const migrationHistory = await dbMigrationHistory(client, schema);
     validateMigrationFiles(
       await readMigrationFiles(argv.path),
-      migrationHistory,
-      false
+      migrationHistory
     );
 
     const reverseMigrationHistory = migrationHistory.reverse().slice(0, nDown);
@@ -127,10 +123,6 @@ const main = async () => {
       reverseMigrationHistory
     );
 
-    validateDownMigrationFiles(
-      downMigrationFilesToApply,
-      reverseMigrationHistory
-    );
     for (const { filename, script, upFilename } of downMigrationFilesToApply) {
       await applyDownMigration(client, schema, filename, script, upFilename);
     }

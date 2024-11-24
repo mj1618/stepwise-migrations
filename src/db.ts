@@ -106,3 +106,82 @@ export const dbGetScript = async (
   );
   return script.rows[0].script;
 };
+
+export const applyMigration = async (
+  client: PoolClient,
+  schema: string,
+  filename: string,
+  script: string
+) => {
+  try {
+    process.stdout.write(`Applying migration ${filename}... `);
+    await client.query("BEGIN");
+
+    await client.query(
+      `SET search_path TO ${schema};
+    ${script.toString()}`
+    );
+
+    await client.query(
+      `INSERT INTO ${schema}.stepwise_migrations (name, script) VALUES ($1, $2)`,
+      [filename, script]
+    );
+
+    await client.query(
+      `INSERT INTO ${schema}.stepwise_audit (type, name, script) VALUES ($1, $2, $3)`,
+      ["up", filename, script]
+    );
+
+    await client.query("COMMIT");
+
+    console.log(`done!`);
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (error) {
+      console.error("Error rolling back transaction", error);
+    }
+    console.error("Error applying migration", error);
+    process.exit(1);
+  }
+};
+
+export const applyDownMigration = async (
+  client: PoolClient,
+  schema: string,
+  filename: string,
+  script: string,
+  upFilename: string
+) => {
+  try {
+    process.stdout.write(`Applying down migration ${filename}... `);
+    await client.query("BEGIN");
+
+    await client.query(
+      `SET search_path TO ${schema};
+    ${script.toString()}`
+    );
+
+    await client.query(
+      `DELETE FROM ${schema}.stepwise_migrations WHERE name = $1`,
+      [upFilename]
+    );
+
+    await client.query(
+      `INSERT INTO ${schema}.stepwise_audit (type, name, script) VALUES ($1, $2, $3)`,
+      ["down", filename, script]
+    );
+
+    await client.query("COMMIT");
+
+    console.log(`done!`);
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch (error) {
+      console.error("Error rolling back transaction", error);
+    }
+    console.error("Error applying down migration", error);
+    process.exit(1);
+  }
+};
