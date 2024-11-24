@@ -242,8 +242,8 @@ Command:
 
 ```bash
 npx stepwise-migrations get-script --filename v2_auth.sql \
-  --connection=postgresql://postgres:postgres@127.0.0.1:5432/colliedb \
-  --schema=collie \
+  --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
+  --schema=myschema \
   --path=./db/migration/
 ```
 
