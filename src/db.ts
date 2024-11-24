@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS ${schema}.stepwise_migrations (
 CREATE TABLE IF NOT EXISTS ${schema}.stepwise_audit (
   id SERIAL PRIMARY KEY,
   type TEXT NOT NULL,
-  name TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
   script TEXT NOT NULL,
   applied_by TEXT NOT NULL DEFAULT current_user,
   applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
