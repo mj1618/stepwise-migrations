@@ -1,11 +1,6 @@
-import crypto from "crypto";
 import fs from "fs/promises";
 import path from "path";
 import { MigrationRow } from "./types";
-
-export const calculateHash = (contents: string) => {
-  return crypto.createHash("sha256").update(contents).digest("hex");
-};
 
 export const usage = `
 Usage: stepwise-migrations [command] [options]
@@ -50,16 +45,6 @@ export const validateArgs = (argv: any) => {
     console.log(usage);
     process.exit(1);
   }
-  if (
-    argv._[0] !== "migrate" &&
-    argv._[0] !== "info" &&
-    argv._[0] !== "drop" &&
-    argv._[0] !== "down"
-  ) {
-    console.error(`Invalid command: ${argv._[0]}`);
-    console.log(usage);
-    process.exit(1);
-  }
 };
 
 export const readMigrationFiles = async (directory: string) => {
@@ -77,21 +62,52 @@ export const readMigrationFiles = async (directory: string) => {
     type: "up";
     fullFilePath: string;
     filename: string;
-    hash: string;
-    contents: string;
+    script: string;
   }[] = [];
   for (const fullFilePath of migrationFiles) {
-    const contents = await fs.readFile(fullFilePath, "utf8");
+    const script = await fs.readFile(fullFilePath, "utf8");
 
     results.push({
       type: "up",
       fullFilePath,
       filename: path.basename(fullFilePath),
-      hash: calculateHash(contents),
-      contents,
+      script,
     });
   }
   return results;
+};
+
+export const printMigrationHistoryAndUnappliedMigrations = (
+  migrationFiles: { filename: string }[],
+  migrationHistory: MigrationRow[]
+) => {
+  console.log("Migration history:");
+  console.table(
+    migrationHistory.map((h) => ({
+      id: h.id,
+      name: h.name,
+      applied_by: h.applied_by,
+      applied_at: h.applied_at,
+    }))
+  );
+  console.log("Unapplied migrations:");
+  console.table(
+    migrationFiles.slice(migrationHistory.length).map((m) => ({
+      filename: m.filename,
+    }))
+  );
+};
+
+export const printMigrationHistory = (migrationHistory: MigrationRow[]) => {
+  console.log("Migration history:");
+  console.table(
+    migrationHistory.map((h) => ({
+      id: h.id,
+      name: h.name,
+      applied_by: h.applied_by,
+      applied_at: h.applied_at,
+    }))
+  );
 };
 
 export const fileExists = async (path: string) => {
@@ -112,7 +128,7 @@ export const readDownMigrationFiles = async (
     filename: string;
     upFilename: string;
 
-    contents: string;
+    script: string;
   }[] = [];
   for (const migration of migrationHistory) {
     const fullFilePath = path.join(
@@ -123,13 +139,13 @@ export const readDownMigrationFiles = async (
       console.error(`Down migration file not found: ${fullFilePath}`);
       process.exit(1);
     }
-    const contents = await fs.readFile(fullFilePath, "utf8");
+    const script = await fs.readFile(fullFilePath, "utf8");
     results.push({
       type: "down",
       fullFilePath,
       filename: path.basename(fullFilePath),
       upFilename: migration.name,
-      contents,
+      script,
     });
   }
   return results;

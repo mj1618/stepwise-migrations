@@ -1,8 +1,9 @@
+import gitDiff from "git-diff";
 import { PoolClient } from "pg";
 import { MigrationRow } from "./types";
 
 export const validateMigrationFiles = (
-  migrationFiles: { fullFilePath: string; filename: string; hash: string }[],
+  migrationFiles: { fullFilePath: string; filename: string; script: string }[],
   migrationHistory: MigrationRow[],
   isUp: boolean = true
 ) => {
@@ -18,13 +19,8 @@ export const validateMigrationFiles = (
     process.exit(1);
   }
 
-  if (migrationFiles.length === migrationHistory.length && isUp) {
-    console.log("All migrations are already applied");
-    process.exit(0);
-  }
-
   for (let i = 0; i < migrationFiles.length; i++) {
-    const { filename, hash: migrationHash } = migrationFiles[i];
+    const { filename, script: migrationScript } = migrationFiles[i];
     if (i >= migrationHistory.length) {
       continue;
     }
@@ -32,10 +28,18 @@ export const validateMigrationFiles = (
       console.error(`Error: migration ${filename} has been renamed, aborting.`);
       process.exit(1);
     }
-    if (migrationHistory[i].hash !== migrationHash) {
+    if (migrationHistory[i].script !== migrationScript) {
       console.error(
         `Error: migration ${filename} has been modified, aborting.`
       );
+
+      console.log(
+        gitDiff(migrationHistory[i].script, migrationScript, {
+          color: true,
+          noHeaders: true,
+        })
+      );
+
       process.exit(1);
     }
   }
@@ -45,8 +49,7 @@ export const applyMigration = async (
   client: PoolClient,
   schema: string,
   filename: string,
-  contents: string,
-  hash: string
+  script: string
 ) => {
   try {
     process.stdout.write(`Applying migration ${filename}... `);
@@ -54,12 +57,17 @@ export const applyMigration = async (
 
     await client.query(
       `SET search_path TO ${schema};
-    ${contents.toString()}`
+    ${script.toString()}`
     );
 
     await client.query(
-      `INSERT INTO ${schema}.stepwise_migrations (name, hash) VALUES ($1, $2)`,
-      [filename, hash]
+      `INSERT INTO ${schema}.stepwise_migrations (name, script) VALUES ($1, $2)`,
+      [filename, script]
+    );
+
+    await client.query(
+      `INSERT INTO ${schema}.stepwise_audit (type, name, script) VALUES ($1, $2, $3)`,
+      ["up", filename, script]
     );
 
     await client.query("COMMIT");
@@ -98,7 +106,7 @@ export const applyDownMigration = async (
   client: PoolClient,
   schema: string,
   filename: string,
-  contents: string,
+  script: string,
   upFilename: string
 ) => {
   try {
@@ -107,12 +115,17 @@ export const applyDownMigration = async (
 
     await client.query(
       `SET search_path TO ${schema};
-    ${contents.toString()}`
+    ${script.toString()}`
     );
 
     await client.query(
       `DELETE FROM ${schema}.stepwise_migrations WHERE name = $1`,
       [upFilename]
+    );
+
+    await client.query(
+      `INSERT INTO ${schema}.stepwise_audit (type, name, script) VALUES ($1, $2, $3)`,
+      ["down", filename, script]
     );
 
     await client.query("COMMIT");

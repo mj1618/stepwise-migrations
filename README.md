@@ -24,10 +24,16 @@ Commands:
     Migrate the database to the latest version
   down
     Rollback the database to the previous version
+  validate
+    Validate the migration files and the migration history table
+  audit
+    Show the audit history for the migrations in the database
   info
     Show information about the current state of the migrations in the database
   drop
     Drop all tables, schema and migration history table
+  get-script
+    Get the script for the last applied migration
 
 Options:
   --connection <connection>  The connection string to use to connect to the database
@@ -36,6 +42,7 @@ Options:
   --ssl true/false           Whether to use SSL for the connection (default: false)
   --nup                      Number of up migrations to apply (default: all)
   --ndown                    Number of down migrations to apply (default: 1)
+  --filename                 The filename to get the script for (default: last applied migration)
 
 Example:
   npx stepwise-migrations migrate \
@@ -48,7 +55,7 @@ Example:
 
 ### Migrate
 
-Command:
+If all files are in a valid state, runs all the "up" migrations that have not been applied yet.
 
 ```bash
 npx stepwise-migrations migrate \
@@ -57,24 +64,10 @@ npx stepwise-migrations migrate \
   --path=./db/migration/
 ```
 
-Outputs:
-
-```
-Creating schema myschema... done!
-Creating migration history table... done!
-Applying migration v1_connect_session_table.sql... done!
-Applying migration v2_auth.sql... done!
-All done! Applied 2 migrations
-New migration history:
-┌─────────┬────┬────────────────────────────────┬────────────────────────────────────────────────────────────────────┬────────────┬─────────────────────────────┐
-│ (index) │ id │ name                           │ hash                                                               │ applied_by │ applied_at                  │
-├─────────┼────┼────────────────────────────────┼────────────────────────────────────────────────────────────────────┼────────────┼─────────────────────────────┤
-│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'f08638e58139ae0e2dda24b1bdba29f3f2128597066a23d2bb382d448bbe9d7e' │ 'postgres' │ '2024-11-23 18:29:16.1616'  │
-│ 1       │ 2  │ 'v2_auth.sql'                  │ '0a4c5df39f03df85cb68ef0b297b913d7c15477fa9dcba13b6e0577d88258a8e' │ 'postgres' │ '2024-11-23 18:29:16.16533' │
-└─────────┴────┴────────────────────────────────┴────────────────────────────────────────────────────────────────────┴────────────┴─────────────────────────────┘
-```
-
 ### Down
+
+Runs a single down migration for the last applied migration.
+Can run multiple down migrations if the `--ndown` option is provided.
 
 Command:
 
@@ -85,20 +78,31 @@ npx stepwise-migrations down \
   --path=./db/migration/
 ```
 
-Outputs:
+### Validate
 
+Validates the migration files and the migration history table.
+
+```bash
+npx stepwise-migrations validate \
+  --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
+  --schema=myschema \
+  --path=./db/migration/
 ```
-Applying down migration v2_auth.down.sql... done!
-All done! Applied 1 down migration
-New migration history:
-┌─────────┬────┬────────────────────────────────┬────────────────────────────────────────────────────────────────────┬────────────┬────────────────────────────┐
-│ (index) │ id │ name                           │ hash                                                               │ applied_by │ applied_at                 │
-├─────────┼────┼────────────────────────────────┼────────────────────────────────────────────────────────────────────┼────────────┼────────────────────────────┤
-│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'f08638e58139ae0e2dda24b1bdba29f3f2128597066a23d2bb382d448bbe9d7e' │ 'postgres' │ '2024-11-23 18:29:16.1616' │
-└─────────┴────┴────────────────────────────────┴────────────────────────────────────────────────────────────────────┴────────────┴────────────────────────────┘
+
+### Audit
+
+Shows the audit history for the migrations in the database.
+
+```bash
+npx stepwise-migrations audit \
+  --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
+  --schema=myschema \
+  --path=./db/migration/
 ```
 
 ### Info
+
+Shows the current state of the migrations in the database.
 
 Command:
 
@@ -109,18 +113,9 @@ npx stepwise-migrations info \
   --path=./db/migration/
 ```
 
-Outputs:
-
-```
-Migration history:
-┌─────────┬────┬────────────────────────────────┬────────────────────────────────────────────────────────────────────┬────────────┬────────────────────────────┐
-│ (index) │ id │ name                           │ hash                                                               │ applied_by │ applied_at                 │
-├─────────┼────┼────────────────────────────────┼────────────────────────────────────────────────────────────────────┼────────────┼────────────────────────────┤
-│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'f08638e58139ae0e2dda24b1bdba29f3f2128597066a23d2bb382d448bbe9d7e' │ 'postgres' │ '2024-11-23 18:29:16.1616' │
-└─────────┴────┴────────────────────────────────┴────────────────────────────────────────────────────────────────────┴────────────┴────────────────────────────┘
-```
-
 ### Drop
+
+Drops the tables, schema and migration history table.
 
 Command:
 
@@ -130,8 +125,16 @@ npx stepwise-migrations drop \
   --schema=myschema
 ```
 
-Outputs:
+### Get Script
 
-```
-Dropping the tables, schema and migration history table... done!
+Gets the script for the last applied migration.
+Can get the script for a specific migration if the `--filename` option is provided.
+
+Command:
+
+```bash
+npx stepwise-migrations get-script \
+  --filename v1_users.sql \
+  --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
+  --schema=myschema
 ```

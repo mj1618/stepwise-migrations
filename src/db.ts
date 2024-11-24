@@ -1,5 +1,5 @@
 import pg, { Pool, PoolClient } from "pg";
-import { MigrationRow } from "./types";
+import { AuditRow, MigrationRow } from "./types";
 
 pg.types.setTypeParser(1114, function (stringValue) {
   return stringValue; //1114 for time without timezone type
@@ -61,19 +61,48 @@ export const dbCreateSchema = async (client: PoolClient, schema: string) => {
   console.log(`done!`);
 };
 
+export const dbAuditHistory = async (client: PoolClient, schema: string) => {
+  const auditQuery = await client.query(
+    `SELECT * FROM ${schema}.stepwise_audit`
+  );
+  return auditQuery.rows as AuditRow[];
+};
+
 export const dbCreateHistoryTable = async (
   client: PoolClient,
   schema: string
 ) => {
   process.stdout.write(`Creating migration history table... `);
   await client.query(
-    `CREATE TABLE IF NOT EXISTS ${schema}.stepwise_migrations (
-    id SERIAL PRIMARY KEY,
-    name TEXT UNIQUE NOT NULL,
-    hash TEXT NOT NULL,
-    applied_by TEXT NOT NULL DEFAULT current_user,
-    applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )`
+    `
+CREATE TABLE IF NOT EXISTS ${schema}.stepwise_migrations (
+  id SERIAL PRIMARY KEY,
+  name TEXT UNIQUE NOT NULL,
+  script TEXT NOT NULL,
+  applied_by TEXT NOT NULL DEFAULT current_user,
+  applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS ${schema}.stepwise_audit (
+  id SERIAL PRIMARY KEY,
+  type TEXT NOT NULL,
+  name TEXT UNIQUE NOT NULL,
+  script TEXT NOT NULL,
+  applied_by TEXT NOT NULL DEFAULT current_user,
+  applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+    `
   );
   console.log(`done!`);
+};
+
+export const dbGetScript = async (
+  client: PoolClient,
+  schema: string,
+  filename: string
+) => {
+  const script = await client.query(
+    `SELECT script FROM ${schema}.stepwise_audit WHERE name = $1`,
+    [filename]
+  );
+  return script.rows[0].script;
 };
