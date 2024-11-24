@@ -7,12 +7,12 @@ Loosely based on flyway.
 
 ## Instructions
 
-Name up migration files as `.sql` and down migration files with the same name but suffixed with `.down.sql`.
-e.g. `v1_users.sql` and `v1_users.down.sql`.
-NOTE: Down migrations are optional.
-
 Up migrations are first sorted in ascending order based on filename.
 No subdirectories are read below the migration directory.
+
+Name the "up" migration files as `.sql` and the "down" migration files with the same name but suffixed with `.down.sql`.
+e.g. `v1_users.sql` and `v1_users.down.sql`.
+Down migrations are optional.
 
 ## Usage
 
