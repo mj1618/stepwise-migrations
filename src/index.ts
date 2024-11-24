@@ -147,7 +147,15 @@ const main = async () => {
   } else if (command === "audit") {
     const auditHistory = await dbAuditHistory(client, schema);
     console.log("Audit history:");
-    console.table(auditHistory);
+    console.table(
+      auditHistory.map((row) => ({
+        id: row.id,
+        type: row.type,
+        name: row.name,
+        applied_by: row.applied_by,
+        applied_at: row.applied_at,
+      }))
+    );
   } else if (command === "get-script") {
     const script = await dbGetScript(client, schema, argv.filename);
     console.log(script);
