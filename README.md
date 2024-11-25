@@ -63,7 +63,7 @@ If all files are in a valid state, runs all the "up" migrations that have not be
 npx stepwise-migrations migrate \
   --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
   --schema=myschema \
-  --path=./db/migration/
+  --path=./test/migrations-template/
 ```
 
 <details>

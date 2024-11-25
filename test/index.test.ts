@@ -2,8 +2,8 @@ import assert from "node:assert";
 import fs from "node:fs";
 import { beforeEach, describe, it } from "node:test";
 import { assertIncludesAll, assertIncludesExcludesAll, execute } from "./utils";
-const connection = "postgresql://postgres:postgres@127.0.0.1:5432/stepwise-db";
-const schema = "stepwise";
+const connection = "postgresql://postgres:postgres@127.0.0.1:5432/mydb";
+const schema = "testschema";
 
 const paths = {
   valid: "./test/migrations-valid",

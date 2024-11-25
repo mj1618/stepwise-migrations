@@ -1,9 +1,9 @@
 services:
-  stepwise-db:
-    container_name: stepwise-db
+  mydb:
+    container_name: mydb
     image: postgres:17.2
     environment:
-      POSTGRES_DB: stepwise-db
+      POSTGRES_DB: mydb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     healthcheck:
