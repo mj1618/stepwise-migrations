@@ -199,3 +199,10 @@ export const exitIfNotInitialized = (
     process.exit(1);
   }
 };
+
+export const sliceFromFirstNull = <T>(array: (T | undefined)[]): T[] => {
+  const indexOfFirstNull = array.findIndex((x) => x == null);
+  return indexOfFirstNull < 0
+    ? (array as T[])
+    : (array.slice(0, indexOfFirstNull) as T[]);
+};

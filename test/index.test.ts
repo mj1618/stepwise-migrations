@@ -21,7 +21,7 @@ const executeCommand = (
     --path=${path} ${extraArgs}
   `);
 
-describe.only("valid migrations", async () => {
+describe("valid migrations", async () => {
   beforeEach(async () => {
     const { output, error, exitCode } = await executeCommand("drop", "");
     assert.ok(
@@ -51,6 +51,7 @@ describe.only("valid migrations", async () => {
       "v2_second.sql",
       "v3_third.sql",
     ]);
+
     assertIncludesAll(await executeCommand("undo", paths.valid), [
       "All done! Performed 1 undo migration",
     ]);
@@ -90,7 +91,7 @@ describe.only("valid migrations", async () => {
     ]);
   });
 
-  it.only("migrate with altered repeatable migration", async () => {
+  it("migrate with altered repeatable migration", async () => {
     assertIncludesAll(await executeCommand("migrate", paths.valid), [
       "All done! Applied 4 migrations",
     ]);
@@ -119,7 +120,7 @@ describe.only("valid migrations", async () => {
   });
 });
 
-describe("invalid migrations", async () => {
+describe.only("invalid migrations", async () => {
   beforeEach(async () => {
     const { output, error, exitCode } = await executeCommand("drop", "");
     assert.ok(
@@ -135,7 +136,7 @@ describe("invalid migrations", async () => {
     });
   });
 
-  it("missing down migration", async () => {
+  it.only("missing undo migration", async () => {
     assertIncludesAll(await executeCommand("migrate", paths.invalid), [
       "All done!",
     ]);
@@ -144,7 +145,7 @@ describe("invalid migrations", async () => {
 
     assertIncludesAll(
       await executeCommand("undo", paths.invalid, "--nundos=2"),
-      ["Missing undo migration for"]
+      ["Error: not enough sequential (from last) undo migrations to apply"]
     );
   });
 

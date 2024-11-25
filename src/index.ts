@@ -13,11 +13,11 @@ import {
   dbTableExists,
 } from "./db";
 import { getUndoFilename, loadState } from "./state";
-import { MigrationFile } from "./types";
 import {
   abortIfErrors,
   exitIfNotInitialized,
   printMigrationHistoryAndUnappliedMigrations,
+  sliceFromFirstNull,
   usage,
   validateArgs,
 } from "./utils";
@@ -129,10 +129,8 @@ const main = async () => {
     abortIfErrors(state);
 
     const reversedAppliedVersionedMigrations =
-      state.current.appliedVersionedMigrations
-        .slice()
-        .reverse()
-        .slice(0, nundo);
+      state.current.appliedVersionedMigrations.slice().reverse();
+
     const undosToApplyAll = reversedAppliedVersionedMigrations.map(
       (migration) =>
         state.files.undoFiles.find(
@@ -140,26 +138,16 @@ const main = async () => {
         )
     );
 
-    const indexOfFirstNull = undosToApplyAll.findIndex((x) => x == null);
-    const undosToApply = undosToApplyAll.slice(
-      0,
-      indexOfFirstNull
-    ) as MigrationFile[];
+    const undosToApply = sliceFromFirstNull(undosToApplyAll).slice(0, nundo);
 
     if (undosToApply.length < nundo) {
-      if (indexOfFirstNull < reversedAppliedVersionedMigrations.length) {
-        console.error(
-          `Missing undo migration for ${reversedAppliedVersionedMigrations[indexOfFirstNull].filename}`
-        );
-      } else {
-        console.error(
-          `Error: not enough undo migrations to apply ${nundo} undos.`
-        );
-      }
-
+      console.error(
+        `Error: not enough sequential (from last) undo migrations to apply ${nundo} undos.`
+      );
       process.exit(1);
     }
 
+    console.log(undosToApply);
     for (const { filename, script } of undosToApply) {
       await applyUndoMigration(client, schema, filename, script);
     }
