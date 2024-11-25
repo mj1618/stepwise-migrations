@@ -53,6 +53,8 @@ Example:
 
 ## Examples
 
+[comment]: <> (Start of examples)
+
 ### Migrate
 
 If all files are in a valid state, runs all the "up" migrations that have not been applied yet.
@@ -233,7 +235,7 @@ Migration state:
 
 </details>
 
-### Get Script
+### Get Applied Script
 
 Gets the script for the last applied migration.
 Can get the script for a specific migration if the `--filename` option is provided.
@@ -241,7 +243,7 @@ Can get the script for a specific migration if the `--filename` option is provid
 Command:
 
 ```bash
-npx stepwise-migrations get-script --filename v2_auth.sql \
+npx stepwise-migrations get-applied-script --filename v2_auth.sql \
   --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
   --schema=myschema \
   --path=./db/migration/
@@ -284,3 +286,5 @@ Dropping the tables, schema and migration stepwise_migration_events table... don
 ```
 
 </details>
+
+[comment]: <> (End of examples)
