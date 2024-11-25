@@ -24,25 +24,25 @@ Loosely based on flyway.
 
 There are three types of migrations:
 
-<b>Versioned migrations</b>
+<b>1. Versioned migrations</b>
 
 - The filename must end with `.sql`.
 - These are always applied in ascending order based on filename.
 - Once applied, the file cannot be altered or else an error will be thrown.
 
-<b>Repeatable migrations</b>
+<b>2. Repeatable migrations</b>
 
 - Are identified by the filename ending with `.repeatable.sql`
 - For things like trigger functions
 - Are always applied after all versioned migrations
 - When altered, the new script is applied on next migration run
 
-<b>Undo migrations</b>
+<b>3. Undo migrations</b>
 
-- Run on the "undo" command
-- Can only be run on versioned migrations
-- Are applied in reverse order of the versioned migrations
+- Are completely optional
 - Must have the same filename as the versioned migration but suffixed with `.undo.sql`
+- Are applied in reverse order of the versioned migrations
+- Can only be for undoing versioned migrations, not repeatable migrations. For repeatable migrations, simply delete the trigger function in the repeatable migration file and migrate again.
 
 ## Usage
 
@@ -150,13 +150,6 @@ npx stepwise-migrations undo \
 <summary>Example output</summary>
 
 ```text
-[
-  {
-    type: 'undo',
-    filename: 'v3_third.undo.sql',
-    script: 'drop table third;'
-  }
-]
 Applying undo migration v3_third.undo.sql... done!
 All done! Performed 1 undo migration
 All applied versioned migrations:

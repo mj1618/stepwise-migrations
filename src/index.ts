@@ -147,7 +147,6 @@ const main = async () => {
       process.exit(1);
     }
 
-    console.log(undosToApply);
     for (const { filename, script } of undosToApply) {
       await applyUndoMigration(client, schema, filename, script);
     }
