@@ -1,19 +1,48 @@
 # Stepwise Migrations
 
-A tool for managing Raw SQL migrations in a Postgres database.
+A JavaScript CLI tool for managing Raw SQL migrations in a Postgres database.
 Loosely based on flyway.
 
 [![npm version](https://badge.fury.io/js/stepwise-migrations.svg?icon=si%3Anpm&)](https://badge.fury.io/js/stepwise-migrations)
 ![test workflow](https://github.com/github/docs/actions/workflows/test.yml/badge.svg)
 
+## Table of Contents
+
+- [Stepwise Migrations](#stepwise-migrations)
+  - [Instructions](#instructions)
+  - [Usage](#usage)
+  - [Examples](#examples)
+    - [Migrate](#migrate)
+    - [Undo](#undo)
+    - [Validate](#validate)
+    - [Audit](#audit)
+    - [Info](#info)
+    - [Get Applied Script](#get-applied-script)
+    - [Drop](#drop)
+
 ## Instructions
 
-Up migrations are first sorted in ascending order based on filename.
-No subdirectories are read below the migration directory.
+There are three types of migrations:
 
-Name the "up" migration files as `.sql` and the "down" migration files with the same name but suffixed with `.undo.sql`.
-e.g. `v1_users.sql` and `v1_users.undo.sql`.
-Down migrations are optional.
+<b>Versioned migrations</b>
+
+- The filename must end with `.sql`.
+- These are always applied in ascending order based on filename.
+- Once applied, the file cannot be altered or else an error will be thrown.
+
+<b>Repeatable migrations</b>
+
+- Are identified by the filename ending with `.repeatable.sql`
+- For things like trigger functions
+- Are always applied after all versioned migrations
+- When altered, the new script is applied on next migration run
+
+<b>Undo migrations</b>
+
+- Run on the "undo" command
+- Can only be run on versioned migrations
+- Are applied in reverse order of the versioned migrations
+- Must have the same filename as the versioned migration but suffixed with `.undo.sql`
 
 ## Usage
 
