@@ -9,6 +9,7 @@ Loosely based on flyway.
 ## Table of Contents
 
 - [Stepwise Migrations](#stepwise-migrations)
+  - [Installation](#installation)
   - [Instructions](#instructions)
   - [Usage](#usage)
   - [Examples](#examples)
@@ -19,6 +20,20 @@ Loosely based on flyway.
     - [Info](#info)
     - [Get Applied Script](#get-applied-script)
     - [Drop](#drop)
+
+## Installation
+
+Once your Postgres DB is running, simply use `npx` to get started:
+
+```bash
+mkdir ./your-migrations-directory
+echo "create table first (id serial primary key, name text not null);" > ./your-migrations-directory/v1_first.sql
+
+npx stepwise-migrations migrate \
+  --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase \
+  --schema=myschema \
+  --path=./your-migrations-directory/
+```
 
 ## Instructions
 
