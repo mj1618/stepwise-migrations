@@ -2,26 +2,25 @@
 
 import yargs from "yargs";
 import {
-  applyDownMigration,
   applyMigration,
-  dbAuditHistory,
+  applyUndoMigration,
   dbConnect,
-  dbCreateHistoryTable,
+  dbCreateEventsTable,
   dbCreateSchema,
-  dbGetScript,
-  dbHistorySchemaExists,
-  dbMigrationHistory,
+  dbDropAll,
+  dbGetAppliedScript,
+  dbSchemaExists,
   dbTableExists,
 } from "./db";
+import { getUndoFilename, loadState } from "./state";
+import { MigrationFile } from "./types";
 import {
-  printMigrationHistory,
+  abortIfErrors,
+  exitIfNotInitialized,
   printMigrationHistoryAndUnappliedMigrations,
-  readDownMigrationFiles,
-  readMigrationFiles,
   usage,
   validateArgs,
 } from "./utils";
-import { validateMigrationFiles } from "./validate";
 
 const main = async () => {
   const argv: any = yargs(process.argv.slice(2)).argv;
@@ -30,129 +29,185 @@ const main = async () => {
 
   const schema = argv.schema;
   const command = argv._[0];
+  const napply = argv.napply || Infinity;
+  const nundo = argv.nundo || 1;
+  const filePath = argv.path;
 
   const client = await dbConnect(argv);
-  const historySchemaExists = await dbHistorySchemaExists(client, schema);
+  const schemaExists = await dbSchemaExists(client, schema);
   const tableExists = await dbTableExists(client, schema);
 
   if (command === "migrate") {
-    const nUp = argv.nup || Infinity;
-    if (!historySchemaExists) {
+    if (!schemaExists) {
       await dbCreateSchema(client, schema);
     }
     if (!tableExists) {
-      await dbCreateHistoryTable(client, schema);
+      await dbCreateEventsTable(client, schema);
     }
 
-    const migrationHistory = await dbMigrationHistory(client, schema);
-    const migrationFiles = await readMigrationFiles(argv.path);
+    const state = await loadState(client, schema, argv.path);
 
-    validateMigrationFiles(migrationFiles, migrationHistory);
+    abortIfErrors(state);
 
-    if (migrationFiles.length === migrationHistory.length) {
+    if (
+      state.files.unappliedVersionedFiles.length === 0 &&
+      state.files.unappliedRepeatableFiles.length === 0
+    ) {
       console.log("All migrations are already applied");
       process.exit(0);
     }
 
-    const migrationsToApply = migrationFiles.slice(
-      migrationHistory.length,
-      migrationHistory.length + nUp
-    );
+    const migrationsToApply = [
+      ...state.files.unappliedVersionedFiles,
+      ...state.files.unappliedRepeatableFiles,
+    ].slice(0, napply);
 
-    for (const { filename, script } of migrationsToApply) {
-      await applyMigration(client, schema, filename, script);
+    for (const migration of migrationsToApply) {
+      await applyMigration(client, schema, migration);
     }
 
-    console.log(`All done! Applied ${migrationsToApply.length} migrations`);
-
-    printMigrationHistoryAndUnappliedMigrations(
-      await readMigrationFiles(argv.path),
-      await dbMigrationHistory(client, schema)
-    );
-  } else if (command === "info") {
-    if (!historySchemaExists) {
-      console.log("Schema does not exist");
-    }
-
-    if (!tableExists) {
-      console.log("Migration history table does not exist");
-    }
-
-    if (historySchemaExists && tableExists) {
-      printMigrationHistory(await dbMigrationHistory(client, schema));
-    }
-  } else if (command === "validate") {
-    if (!historySchemaExists) {
-      console.log("Schema does not exist");
-    }
-
-    if (!tableExists) {
-      console.log("Migration history table does not exist");
-    }
-
-    if (historySchemaExists && tableExists) {
-      validateMigrationFiles(
-        await readMigrationFiles(argv.path),
-        await dbMigrationHistory(client, schema)
-      );
-    }
-    console.log("Validation passed");
-
-    printMigrationHistoryAndUnappliedMigrations(
-      await readMigrationFiles(argv.path),
-      await dbMigrationHistory(client, schema)
-    );
-  } else if (command === "drop") {
-    process.stdout.write(
-      `Dropping the tables, schema and migration history table... `
-    );
-    await client.query(`DROP SCHEMA IF EXISTS ${schema} CASCADE`);
-    console.log(`done!`);
-  } else if (command === "down") {
-    const nDown = argv.ndown || 1;
-
-    const migrationHistory = await dbMigrationHistory(client, schema);
-    validateMigrationFiles(
-      await readMigrationFiles(argv.path),
-      migrationHistory
-    );
-
-    const reverseMigrationHistory = migrationHistory.reverse().slice(0, nDown);
-    const downMigrationFilesToApply = await readDownMigrationFiles(
-      argv.path,
-      reverseMigrationHistory
-    );
-
-    for (const { filename, script, upFilename } of downMigrationFilesToApply) {
-      await applyDownMigration(client, schema, filename, script, upFilename);
-    }
     console.log(
-      `All done! Applied ${downMigrationFilesToApply.length} down migration${
-        downMigrationFilesToApply.length === 1 ? "" : "s"
+      `All done! Applied ${migrationsToApply.length} migration${
+        migrationsToApply.length === 1 ? "" : "s"
       }`
     );
 
     printMigrationHistoryAndUnappliedMigrations(
-      await readMigrationFiles(argv.path),
-      await dbMigrationHistory(client, schema)
+      await loadState(client, schema, filePath)
     );
+  } else if (command === "info") {
+    if (!schemaExists) {
+      console.log("Schema does not exist");
+    }
+
+    if (!tableExists) {
+      console.log(
+        "Migration table has not been initialised. Run migrate to begin."
+      );
+    }
+
+    if (schemaExists && tableExists) {
+      printMigrationHistoryAndUnappliedMigrations(
+        await loadState(client, schema, filePath)
+      );
+    }
+  } else if (command === "status") {
+    if (!schemaExists) {
+      console.log("Schema does not exist");
+    }
+
+    if (!tableExists) {
+      console.log(
+        "Migration table has not been initialised. Run migrate to begin."
+      );
+    }
+
+    if (schemaExists && tableExists) {
+      printMigrationHistoryAndUnappliedMigrations(
+        await loadState(client, schema, filePath)
+      );
+    }
+  } else if (command === "validate") {
+    exitIfNotInitialized(schemaExists, tableExists);
+
+    const state = await loadState(client, schema, argv.path);
+    if (schemaExists && tableExists) {
+      abortIfErrors(state);
+    }
+    console.log("Validation passed");
+
+    printMigrationHistoryAndUnappliedMigrations(state);
+  } else if (command === "drop") {
+    process.stdout.write(
+      `Dropping the tables, schema and migration history table... `
+    );
+    await dbDropAll(client, schema);
+    console.log(`done!`);
+  } else if (command === "undo") {
+    const state = await loadState(client, schema, filePath);
+
+    abortIfErrors(state);
+
+    const reversedAppliedVersionedMigrations =
+      state.current.appliedVersionedMigrations
+        .slice()
+        .reverse()
+        .slice(0, nundo);
+    const undosToApplyAll = reversedAppliedVersionedMigrations.map(
+      (migration) =>
+        state.files.undoFiles.find(
+          (file) => file.filename === getUndoFilename(migration.filename)
+        )
+    );
+
+    const indexOfFirstNull = undosToApplyAll.findIndex((x) => x == null);
+    const undosToApply = undosToApplyAll.slice(
+      0,
+      indexOfFirstNull
+    ) as MigrationFile[];
+
+    if (undosToApply.length < nundo) {
+      if (indexOfFirstNull < reversedAppliedVersionedMigrations.length) {
+        console.error(
+          `Missing undo migration for ${reversedAppliedVersionedMigrations[indexOfFirstNull].filename}`
+        );
+      } else {
+        console.error(
+          `Error: not enough undo migrations to apply ${nundo} undos.`
+        );
+      }
+
+      process.exit(1);
+    }
+
+    for (const { filename, script } of undosToApply) {
+      await applyUndoMigration(client, schema, filename, script);
+    }
+    console.log(
+      `All done! Performed ${undosToApply.length} undo migration${
+        undosToApply.length === 1 ? "" : "s"
+      }`
+    );
+
+    printMigrationHistoryAndUnappliedMigrations(state);
   } else if (command === "audit") {
-    const auditHistory = await dbAuditHistory(client, schema);
-    console.log("Audit history:");
+    exitIfNotInitialized(schemaExists, tableExists);
+
+    const state = await loadState(client, schema, argv.path);
+    console.log("Event history:");
     console.table(
-      auditHistory.map((row) => ({
+      state.events.map((row) => ({
         id: row.id,
         type: row.type,
-        name: row.name,
+        filename: row.filename,
         applied_by: row.applied_by,
         applied_at: row.applied_at,
       }))
     );
-  } else if (command === "get-script") {
-    const script = await dbGetScript(client, schema, argv.filename);
-    console.log(script);
+  } else if (command === "get-applied-script") {
+    if (!schemaExists) {
+      console.log("Schema does not exist");
+      process.exit(1);
+    }
+
+    if (!tableExists) {
+      console.log(
+        "Migration table has not been initialised. Run migrate to begin."
+      );
+      process.exit(1);
+    }
+
+    const state = await loadState(client, schema, argv.path);
+    const script = await dbGetAppliedScript(state, argv.filename);
+    if (script) {
+      console.log(script);
+    } else {
+      console.error(
+        `Script for ${argv.filename} not found, use the audit command to check all applied migrations`
+      );
+    }
   } else {
-    console.error(`Invalid command: ${argv._[0]}`);
+    console.error(`Invalid command: ${command}`);
     console.log(usage);
     process.exit(1);
   }

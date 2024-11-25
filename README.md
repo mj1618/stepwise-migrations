@@ -10,8 +10,8 @@ Loosely based on flyway.
 Up migrations are first sorted in ascending order based on filename.
 No subdirectories are read below the migration directory.
 
-Name the "up" migration files as `.sql` and the "down" migration files with the same name but suffixed with `.down.sql`.
-e.g. `v1_users.sql` and `v1_users.down.sql`.
+Name the "up" migration files as `.sql` and the "down" migration files with the same name but suffixed with `.undo.sql`.
+e.g. `v1_users.sql` and `v1_users.undo.sql`.
 Down migrations are optional.
 
 ## Usage
@@ -22,17 +22,17 @@ Usage: stepwise-migrations [command] [options]
 Commands:
   migrate
     Migrate the database to the latest version
-  down
+  undo
     Rollback the database to the previous version
   validate
-    Validate the migration files and the migration history table
+    Validate the migration files and the stepwise_migration_events table
   audit
     Show the audit history for the migrations in the database
   info
     Show information about the current state of the migrations in the database
   drop
-    Drop all tables, schema and migration history table
-  get-script
+    Drop all tables, schema and stepwise_migration_events table
+  get-applied-script
     Get the script for the last applied migration
 
 Options:
@@ -40,8 +40,8 @@ Options:
   --schema <schema>          The schema to use for the migrations
   --path <path>              The path to the migrations directory
   --ssl true/false           Whether to use SSL for the connection (default: false)
-  --nup                      Number of up migrations to apply (default: all)
-  --ndown                    Number of down migrations to apply (default: 1)
+  --napply                      Number of up migrations to apply (default: all)
+  --nundo                    Number of down migrations to apply (default: 1)
   --filename                 The filename to get the script for (default: last applied migration)
 
 Example:
@@ -70,11 +70,11 @@ npx stepwise-migrations migrate \
 
 ```text
 Creating schema myschema... done!
-Creating migration history table... done!
+Creating stepwise_migration_events table... done!
 Applying migration v1_connect_session_table.sql... done!
 Applying migration v2_auth.sql... done!
 All done! Applied 2 migrations
-Migration history:
+Migration state:
 ┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
 │ (index) │ id │ name                           │ applied_by │ applied_at                   │
 ├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
@@ -89,10 +89,10 @@ Unapplied migrations:
 
 </details>
 
-### Down
+### Undo
 
 Runs a single down migration for the last applied migration.
-Can run multiple down migrations if the `--ndown` option is provided.
+Can run multiple down migrations if the `--nundo` option is provided.
 
 Command:
 
@@ -108,9 +108,9 @@ npx stepwise-migrations down \
 <summary>Example output</summary>
 
 ```text
-Applying down migration v2_auth.down.sql... done!
+Applying down migration v2_auth.undo.sql... done!
 All done! Applied 1 down migration
-Migration history:
+Migration state:
 ┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
 │ (index) │ id │ name                           │ applied_by │ applied_at                   │
 ├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
@@ -128,7 +128,7 @@ Unapplied migrations:
 
 ### Validate
 
-Validates the migration files and the migration history table.
+Validates the migration files and the stepwise_migration_events table.
 
 ```bash
 npx stepwise-migrations validate \
@@ -143,7 +143,7 @@ npx stepwise-migrations validate \
 
 ```text
 Validation passed
-Migration history:
+Migration state:
 ┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
 │ (index) │ id │ name                           │ applied_by │ applied_at                   │
 ├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
@@ -199,7 +199,7 @@ Audit history:
 ├─────────┼────┼────────┼────────────────────────────────┼────────────┼──────────────────────────────┤
 │ 0       │ 1  │ 'up'   │ 'v1_connect_session_table.sql' │ 'postgres' │ '2024-11-24 05:40:41.211617' │
 │ 1       │ 2  │ 'up'   │ 'v2_auth.sql'                  │ 'postgres' │ '2024-11-24 05:40:41.214732' │
-│ 2       │ 3  │ 'down' │ 'v2_auth.down.sql'             │ 'postgres' │ '2024-11-24 05:41:34.541462' │
+│ 2       │ 3  │ 'down' │ 'v2_auth.undo.sql'             │ 'postgres' │ '2024-11-24 05:41:34.541462' │
 └─────────┴────┴────────┴────────────────────────────────┴────────────┴──────────────────────────────┘
 ```
 
@@ -223,7 +223,7 @@ npx stepwise-migrations info \
 <summary>Example output</summary>
 
 ```text
-Migration history:
+Migration state:
 ┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
 │ (index) │ id │ name                           │ applied_by │ applied_at                   │
 ├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
@@ -265,7 +265,7 @@ CREATE TABLE "users" (
 
 ### Drop
 
-Drops the tables, schema and migration history table.
+Drops the tables, schema and stepwise_migration_events table.
 
 Command:
 
@@ -280,7 +280,7 @@ npx stepwise-migrations drop \
 <summary>Example output</summary>
 
 ```text
-Dropping the tables, schema and migration history table... done!
+Dropping the tables, schema and migration stepwise_migration_events table... done!
 ```
 
 </details>

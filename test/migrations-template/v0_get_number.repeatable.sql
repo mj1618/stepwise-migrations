@@ -1,0 +1,6 @@
+CREATE OR REPLACE FUNCTION get_number()
+RETURNS integer AS $$
+BEGIN
+    RETURN 1;
+END; $$
+LANGUAGE plpgsql;

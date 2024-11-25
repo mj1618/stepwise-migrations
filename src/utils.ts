@@ -1,6 +1,11 @@
 import fs from "fs/promises";
 import path from "path";
-import { MigrationRow } from "./types";
+import {
+  AppliedMigration,
+  MigrationFile,
+  MigrationState,
+  MigrationType,
+} from "./types";
 
 export const usage = `
 Usage: stepwise-migrations [command] [options]
@@ -20,13 +25,13 @@ Options:
   --schema <schema>          The schema to use for the migrations
   --path <path>              The path to the migrations directory
   --ssl true/false           Whether to use SSL for the connection (default: false)
-  --nup                      Number of up migrations to apply (default: all)
-  --ndown                    Number of down migrations to apply (default: 1)
+  --napply                      Number of up migrations to apply (default: all)
+  --nundo                    Number of down migrations to apply (default: 1)
 
 Example:
-  npx stepwise-migrations migrate \
-    --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase \
-    --schema=myschema \
+  npx stepwise-migrations migrate \\
+    --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase \\
+    --schema=myschema \\
     --path=./db/migration/
 `;
 
@@ -47,67 +52,117 @@ export const validateArgs = (argv: any) => {
   }
 };
 
-export const readMigrationFiles = async (directory: string) => {
+export const filenameToType = (filename: string): MigrationType => {
+  if (filename.endsWith(".undo.sql")) {
+    return "undo";
+  } else if (filename.endsWith(".repeatable.sql")) {
+    return "repeatable";
+  }
+  return "versioned";
+};
+
+export const readMigrationFiles = async (
+  directory: string,
+  appliedVersionedMigrations: AppliedMigration[]
+) => {
+  let errors: string[] = [];
   const files = await fs.readdir(directory, { withFileTypes: true });
   const migrationFiles = files
-    .filter(
-      (file) =>
-        file.isFile() &&
-        file.name.endsWith(".sql") &&
-        !file.name.endsWith(".down.sql")
-    )
+    .filter((file) => file.isFile() && file.name.endsWith(".sql"))
     .map((file) => path.join(directory, file.name));
   migrationFiles.sort();
-  const results: {
-    type: "up";
-    fullFilePath: string;
-    filename: string;
-    script: string;
-  }[] = [];
-  for (const fullFilePath of migrationFiles) {
-    const script = await fs.readFile(fullFilePath, "utf8");
-
+  const results: MigrationFile[] = [];
+  for (const fullFileName of migrationFiles) {
+    const script = await fs.readFile(fullFileName, "utf8");
     results.push({
-      type: "up",
-      fullFilePath,
-      filename: path.basename(fullFilePath),
+      type: filenameToType(path.basename(fullFileName)),
+      filename: path.basename(fullFileName),
       script,
     });
   }
-  return results;
+
+  for (const appliedMigration of appliedVersionedMigrations) {
+    const file = results.find((f) => f.filename === appliedMigration.filename);
+    if (
+      file &&
+      file.type === "versioned" &&
+      file.script !== appliedMigration.script
+    ) {
+      errors.push(
+        `Versioned migration ${appliedMigration.filename} has been altered. Cannot migrate in current state.`
+      );
+    }
+  }
+
+  return { files: results, errors };
 };
 
 export const printMigrationHistoryAndUnappliedMigrations = (
-  migrationFiles: { filename: string }[],
-  migrationHistory: MigrationRow[]
+  state: MigrationState
 ) => {
-  console.log("Migration history:");
+  console.log("All applied versioned migrations:");
   console.table(
-    migrationHistory.map((h) => ({
+    state.current.appliedVersionedMigrations.map((h) => ({
       id: h.id,
-      name: h.name,
+      type: h.type,
+      filename: h.filename,
       applied_by: h.applied_by,
       applied_at: h.applied_at,
     }))
   );
-  console.log("Unapplied migrations:");
+  if (state.current.appliedRepeatableMigrations.length > 0) {
+    console.log("All applied repeatable migrations:");
+    console.table(
+      state.current.appliedRepeatableMigrations.map((h) => ({
+        id: h.id,
+        type: h.type,
+        filename: h.filename,
+        applied_by: h.applied_by,
+        applied_at: h.applied_at,
+      }))
+    );
+  }
+  console.log("Unapplied versioned migrations:");
   console.table(
-    migrationFiles.slice(migrationHistory.length).map((m) => ({
-      filename: m.filename,
+    state.files.unappliedVersionedFiles.map((h) => ({
+      type: h.type,
+      filename: h.filename,
     }))
   );
+  if (state.files.unappliedRepeatableFiles.length > 0) {
+    console.log("Unapplied repeatable migrations:");
+    console.table(
+      state.files.unappliedRepeatableFiles.map((h) => ({
+        type: h.type,
+        filename: h.filename,
+      }))
+    );
+  }
 };
 
-export const printMigrationHistory = (migrationHistory: MigrationRow[]) => {
-  console.log("Migration history:");
+export const printMigrationHistory = (state: MigrationState) => {
+  console.log("All applied versioned migrations:");
   console.table(
-    migrationHistory.map((h) => ({
+    state.current.appliedVersionedMigrations.map((h) => ({
       id: h.id,
-      name: h.name,
+      type: h.type,
+      filename: h.filename,
       applied_by: h.applied_by,
       applied_at: h.applied_at,
     }))
   );
+  if (state.current.appliedRepeatableMigrations.length > 0) {
+    console.log("All applied repeatable migrations:");
+    console.table(
+      state.current.appliedRepeatableMigrations.map((h) => ({
+        id: h.id,
+        type: h.type,
+        filename: h.filename,
+        applied_by: h.applied_by,
+        applied_at: h.applied_at,
+      }))
+    );
+  }
 };
 
 export const fileExists = async (path: string) => {
@@ -118,35 +173,29 @@ export const fileExists = async (path: string) => {
   }
 };
 
-export const readDownMigrationFiles = async (
-  directory: string,
-  migrationHistory: MigrationRow[]
-) => {
-  const results: {
-    type: "down";
-    fullFilePath: string;
-    filename: string;
-    upFilename: string;
-
-    script: string;
-  }[] = [];
-  for (const migration of migrationHistory) {
-    const fullFilePath = path.join(
-      directory,
-      `${migration.name.split(".sql")[0]}.down.sql`
+export const abortIfErrors = (state: MigrationState) => {
+  if (state.errors.length > 0) {
+    console.error(
+      `There were errors loading the migration state. Please fix the errors and try again.`
     );
-    if (!(await fileExists(fullFilePath))) {
-      console.error(`Down migration file not found: ${fullFilePath}`);
-      process.exit(1);
-    }
-    const script = await fs.readFile(fullFilePath, "utf8");
-    results.push({
-      type: "down",
-      fullFilePath,
-      filename: path.basename(fullFilePath),
-      upFilename: migration.name,
-      script,
-    });
+    console.error(state.errors.map((e) => "  - " + e).join("\n"));
+    process.exit(1);
   }
-  return results;
+};
+
+export const exitIfNotInitialized = (
+  schemaExists: boolean,
+  tableExists: boolean
+) => {
+  if (!schemaExists) {
+    console.log("Schema does not exist. Run migrate to begin.");
+    process.exit(1);
+  }
+
+  if (!tableExists) {
+    console.log(
+      "Migration table has not been initialised. Run migrate to begin."
+    );
+    process.exit(1);
+  }
 };
