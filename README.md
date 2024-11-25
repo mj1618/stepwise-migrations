@@ -70,7 +70,7 @@ Options:
   --schema <schema>          The schema to use for the migrations
   --path <path>              The path to the migrations directory
   --ssl true/false           Whether to use SSL for the connection (default: false)
-  --napply                      Number of up migrations to apply (default: all)
+  --napply                   Number of up migrations to apply (default: all)
   --nundo                    Number of undo migrations to apply (default: 1)
   --filename                 The filename to get the script for (default: last applied migration)
 

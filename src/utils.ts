@@ -14,26 +14,33 @@ Usage: stepwise-migrations [command] [options]
 Commands:
   migrate
     Migrate the database to the latest version
-  down
+  undo
     Rollback the database to the previous version
+  validate
+    Validate the migration files and the stepwise_migration_events table
+  audit
+    Show the audit history for the migrations in the database
   info
     Show information about the current state of the migrations in the database
   drop
-    Drop the tables, schema and migration history table
+    Drop all tables, schema and stepwise_migration_events table
+  get-applied-script
+    Get the script for the last applied migration
 
 Options:
   --connection <connection>  The connection string to use to connect to the database
   --schema <schema>          The schema to use for the migrations
   --path <path>              The path to the migrations directory
   --ssl true/false           Whether to use SSL for the connection (default: false)
-  --napply                      Number of up migrations to apply (default: all)
+  --napply                   Number of up migrations to apply (default: all)
   --nundo                    Number of undo migrations to apply (default: 1)
+  --filename                 The filename to get the script for (default: last applied migration)
 
 Example:
   npx stepwise-migrations migrate \\
     --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase \\
     --schema=myschema \\
-    --path=./db/migration/
+    --path=./test/migrations-template/
 `;
 
 export const validateArgs = (argv: any) => {
