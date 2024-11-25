@@ -1,4 +1,5 @@
 import fs from "fs/promises";
+import gitDiff from "git-diff";
 import path from "path";
 import {
   AppliedMigration,
@@ -89,7 +90,15 @@ export const readMigrationFiles = async (
       file.script !== appliedMigration.script
     ) {
       errors.push(
-        `Versioned migration ${appliedMigration.filename} has been altered. Cannot migrate in current state.`
+        `Versioned migration ${
+          appliedMigration.filename
+        } has been altered. Cannot migrate in current state. \n\n${gitDiff(
+          appliedMigration.script,
+          file.script,
+          {
+            color: true,
+          }
+        )}\n\n`
       );
     }
   }

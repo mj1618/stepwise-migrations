@@ -1,8 +1,8 @@
 {
   "name": "stepwise-migrations",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "",
-  "main": "dist/src/index.js",
+  "main": "./dist/src/index.js",
   "scripts": {
     "build": "tsc",
     "test": "npm run build; glob -c \"tsx --test --test-reporter spec \" \"./test/**/*.test.ts\"",
@@ -24,7 +24,7 @@
     "tsx": "^4.19.2"
   },
   "bin": {
-    "stepwise-migrations": "dist/src/index.js"
+    "stepwise-migrations": "./dist/src/index.js"
   },
   "dependencies": {
     "git-diff": "^2.0.6",

@@ -196,16 +196,17 @@ Unapplied versioned migrations:
 
 <summary>Example output - script changed error</summary>
 
-```sql
-Error: migration v1_connect_session_table.sql has been modified, aborting.
- 	"expire" timestamp(6) NOT NULL
- )
- WITH (OIDS=FALSE);
--ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
-\ No newline at end of file
-+ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
+```
+There were errors loading the migration state. Please fix the errors and try again.
+  - Versioned migration v1_first.sql has been altered. Cannot migrate in current state.
+
+@@ -2,3 +2,5 @@ create table first (
+   id serial primary key,
+   name text not null
+ );
 +
-+ALTER TABLE "session" ADD INDEX "session_sid" ON "session" (sid);
++ALTER TABLE first ADD COLUMN age int;
+\ No newline at end of file
 ```
 
 </details>
