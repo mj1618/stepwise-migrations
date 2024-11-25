@@ -2,7 +2,7 @@
   "name": "stepwise-migrations",
   "version": "1.0.15",
   "description": "",
-  "main": "src/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "build": "tsc",
     "test": "npm run build; glob -c \"tsx --test --test-reporter spec \" \"./test/**/*.test.ts\"",
