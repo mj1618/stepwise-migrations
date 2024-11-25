@@ -136,7 +136,7 @@ describe.only("invalid migrations", async () => {
     });
   });
 
-  it.only("missing undo migration", async () => {
+  it("missing undo migration", async () => {
     assertIncludesAll(await executeCommand("migrate", paths.invalid), [
       "All done!",
     ]);
@@ -162,5 +162,16 @@ describe.only("invalid migrations", async () => {
     assertIncludesAll(await executeCommand("migrate", paths.invalid), [
       "Versioned migration v1_first.sql has been altered. Cannot migrate in current state.",
     ]);
+  });
+
+  it.only("bad creds", async () => {
+    assertIncludesAll(
+      await execute(`npm exec stepwise-migrations info -- \\
+      --connection=postgresql://postgres:badpassword@127.0.0.1:5432/mydb \\
+      --schema=${schema} \\
+      --path=${paths.invalid}
+    `),
+      ["password authentication failed for user"]
+    );
   });
 });

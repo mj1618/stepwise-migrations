@@ -1,1 +1,6 @@
-ALTER TABLE test ADD COLUMN test_column TEXT;
+create table first (
+  id serial primary key,
+  name text not null
+);
+
+ALTER TABLE first ADD COLUMN age int;
