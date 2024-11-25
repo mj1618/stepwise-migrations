@@ -26,7 +26,7 @@ Options:
   --path <path>              The path to the migrations directory
   --ssl true/false           Whether to use SSL for the connection (default: false)
   --napply                      Number of up migrations to apply (default: all)
-  --nundo                    Number of down migrations to apply (default: 1)
+  --nundo                    Number of undo migrations to apply (default: 1)
 
 Example:
   npx stepwise-migrations migrate \\

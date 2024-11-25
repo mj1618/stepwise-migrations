@@ -41,14 +41,14 @@ Options:
   --path <path>              The path to the migrations directory
   --ssl true/false           Whether to use SSL for the connection (default: false)
   --napply                      Number of up migrations to apply (default: all)
-  --nundo                    Number of down migrations to apply (default: 1)
+  --nundo                    Number of undo migrations to apply (default: 1)
   --filename                 The filename to get the script for (default: last applied migration)
 
 Example:
   npx stepwise-migrations migrate \
     --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase \
     --schema=myschema \
-    --path=./db/migration/
+    --path=./test/migrations-template/
 ```
 
 ## Examples
@@ -73,36 +73,46 @@ npx stepwise-migrations migrate \
 ```text
 Creating schema myschema... done!
 Creating stepwise_migration_events table... done!
-Applying migration v1_connect_session_table.sql... done!
-Applying migration v2_auth.sql... done!
-All done! Applied 2 migrations
-Migration state:
-┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
-│ (index) │ id │ name                           │ applied_by │ applied_at                   │
-├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
-│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'postgres' │ '2024-11-24 05:40:41.211617' │
-│ 1       │ 2  │ 'v2_auth.sql'                  │ 'postgres' │ '2024-11-24 05:40:41.214732' │
-└─────────┴────┴────────────────────────────────┴────────────┴──────────────────────────────┘
-Unapplied migrations:
+Applying versioned migration v1_first.sql... done!
+Applying versioned migration v2_second.sql... done!
+Applying versioned migration v3_third.sql... done!
+Applying repeatable migration v0_get_number.repeatable.sql... done!
+All done! Applied 4 migrations
+All applied versioned migrations:
+┌─────────┬────┬─────────────┬─────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ type        │ filename        │ applied_by │ applied_at                   │
+├─────────┼────┼─────────────┼─────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 1  │ 'versioned' │ 'v1_first.sql'  │ 'postgres' │ '2024-11-25 15:25:55.799253' │
+│ 1       │ 2  │ 'versioned' │ 'v2_second.sql' │ 'postgres' │ '2024-11-25 15:25:55.80306'  │
+│ 2       │ 3  │ 'versioned' │ 'v3_third.sql'  │ 'postgres' │ '2024-11-25 15:25:55.80534'  │
+└─────────┴────┴─────────────┴─────────────────┴────────────┴──────────────────────────────┘
+All applied repeatable migrations:
+┌─────────┬────┬──────────────┬────────────────────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ type         │ filename                       │ applied_by │ applied_at                   │
+├─────────┼────┼──────────────┼────────────────────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 4  │ 'repeatable' │ 'v0_get_number.repeatable.sql' │ 'postgres' │ '2024-11-25 15:25:55.807375' │
+└─────────┴────┴──────────────┴────────────────────────────────┴────────────┴──────────────────────────────┘
+Unapplied versioned migrations:
 ┌─────────┐
 │ (index) │
 ├─────────┤
+└─────────┘
 ```
 
 </details>
 
 ### Undo
 
-Runs a single down migration for the last applied migration.
-Can run multiple down migrations if the `--nundo` option is provided.
+Runs a single undo migration for the last applied migration.
+Can run multiple undo migrations if the `--nundo` option is provided.
 
 Command:
 
 ```bash
-npx stepwise-migrations down \
+npx stepwise-migrations undo \
   --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
   --schema=myschema \
-  --path=./db/migration/
+  --path=./test/migrations-template/
 ```
 
 <details>
@@ -110,20 +120,34 @@ npx stepwise-migrations down \
 <summary>Example output</summary>
 
 ```text
-Applying down migration v2_auth.undo.sql... done!
-All done! Applied 1 down migration
-Migration state:
-┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
-│ (index) │ id │ name                           │ applied_by │ applied_at                   │
-├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
-│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'postgres' │ '2024-11-24 05:40:41.211617' │
-└─────────┴────┴────────────────────────────────┴────────────┴──────────────────────────────┘
-Unapplied migrations:
-┌─────────┬───────────────┐
-│ (index) │ filename      │
-├─────────┼───────────────┤
-│ 0       │ 'v2_auth.sql' │
-└─────────┴───────────────┘
+[
+  {
+    type: 'undo',
+    filename: 'v3_third.undo.sql',
+    script: 'drop table third;'
+  }
+]
+Applying undo migration v3_third.undo.sql... done!
+All done! Performed 1 undo migration
+All applied versioned migrations:
+┌─────────┬────┬─────────────┬─────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ type        │ filename        │ applied_by │ applied_at                   │
+├─────────┼────┼─────────────┼─────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 1  │ 'versioned' │ 'v1_first.sql'  │ 'postgres' │ '2024-11-25 15:25:55.799253' │
+│ 1       │ 2  │ 'versioned' │ 'v2_second.sql' │ 'postgres' │ '2024-11-25 15:25:55.80306'  │
+│ 2       │ 3  │ 'versioned' │ 'v3_third.sql'  │ 'postgres' │ '2024-11-25 15:25:55.80534'  │
+└─────────┴────┴─────────────┴─────────────────┴────────────┴──────────────────────────────┘
+All applied repeatable migrations:
+┌─────────┬────┬──────────────┬────────────────────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ type         │ filename                       │ applied_by │ applied_at                   │
+├─────────┼────┼──────────────┼────────────────────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 4  │ 'repeatable' │ 'v0_get_number.repeatable.sql' │ 'postgres' │ '2024-11-25 15:25:55.807375' │
+└─────────┴────┴──────────────┴────────────────────────────────┴────────────┴──────────────────────────────┘
+Unapplied versioned migrations:
+┌─────────┐
+│ (index) │
+├─────────┤
+└─────────┘
 ```
 
 </details>
@@ -136,7 +160,7 @@ Validates the migration files and the stepwise_migration_events table.
 npx stepwise-migrations validate \
   --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
   --schema=myschema \
-  --path=./db/migration/
+  --path=./test/migrations-template/
 ```
 
 <details>
@@ -145,18 +169,25 @@ npx stepwise-migrations validate \
 
 ```text
 Validation passed
-Migration state:
-┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
-│ (index) │ id │ name                           │ applied_by │ applied_at                   │
-├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
-│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'postgres' │ '2024-11-24 05:40:41.211617' │
-└─────────┴────┴────────────────────────────────┴────────────┴──────────────────────────────┘
-Unapplied migrations:
-┌─────────┬───────────────┐
-│ (index) │ filename      │
-├─────────┼───────────────┤
-│ 0       │ 'v2_auth.sql' │
-└─────────┴───────────────┘
+All applied versioned migrations:
+┌─────────┬────┬─────────────┬─────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ type        │ filename        │ applied_by │ applied_at                   │
+├─────────┼────┼─────────────┼─────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 1  │ 'versioned' │ 'v1_first.sql'  │ 'postgres' │ '2024-11-25 15:25:55.799253' │
+│ 1       │ 2  │ 'versioned' │ 'v2_second.sql' │ 'postgres' │ '2024-11-25 15:25:55.80306'  │
+└─────────┴────┴─────────────┴─────────────────┴────────────┴──────────────────────────────┘
+All applied repeatable migrations:
+┌─────────┬────┬──────────────┬────────────────────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ type         │ filename                       │ applied_by │ applied_at                   │
+├─────────┼────┼──────────────┼────────────────────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 4  │ 'repeatable' │ 'v0_get_number.repeatable.sql' │ 'postgres' │ '2024-11-25 15:25:55.807375' │
+└─────────┴────┴──────────────┴────────────────────────────────┴────────────┴──────────────────────────────┘
+Unapplied versioned migrations:
+┌─────────┬─────────────┬────────────────┐
+│ (index) │ type        │ filename       │
+├─────────┼─────────────┼────────────────┤
+│ 0       │ 'versioned' │ 'v3_third.sql' │
+└─────────┴─────────────┴────────────────┘
 ```
 
 </details>
@@ -187,7 +218,7 @@ Shows the audit history for the migrations in the database.
 npx stepwise-migrations audit \
   --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
   --schema=myschema \
-  --path=./db/migration/
+  --path=./test/migrations-template/
 ```
 
 <details>
@@ -195,14 +226,16 @@ npx stepwise-migrations audit \
 <summary>Example output</summary>
 
 ```text
-Audit history:
-┌─────────┬────┬────────┬────────────────────────────────┬────────────┬──────────────────────────────┐
-│ (index) │ id │ type   │ name                           │ applied_by │ applied_at                   │
-├─────────┼────┼────────┼────────────────────────────────┼────────────┼──────────────────────────────┤
-│ 0       │ 1  │ 'up'   │ 'v1_connect_session_table.sql' │ 'postgres' │ '2024-11-24 05:40:41.211617' │
-│ 1       │ 2  │ 'up'   │ 'v2_auth.sql'                  │ 'postgres' │ '2024-11-24 05:40:41.214732' │
-│ 2       │ 3  │ 'down' │ 'v2_auth.undo.sql'             │ 'postgres' │ '2024-11-24 05:41:34.541462' │
-└─────────┴────┴────────┴────────────────────────────────┴────────────┴──────────────────────────────┘
+Event history:
+┌─────────┬────┬──────────────┬────────────────────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ type         │ filename                       │ applied_by │ applied_at                   │
+├─────────┼────┼──────────────┼────────────────────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 1  │ 'versioned'  │ 'v1_first.sql'                 │ 'postgres' │ '2024-11-25 15:25:55.799253' │
+│ 1       │ 2  │ 'versioned'  │ 'v2_second.sql'                │ 'postgres' │ '2024-11-25 15:25:55.80306'  │
+│ 2       │ 3  │ 'versioned'  │ 'v3_third.sql'                 │ 'postgres' │ '2024-11-25 15:25:55.80534'  │
+│ 3       │ 4  │ 'repeatable' │ 'v0_get_number.repeatable.sql' │ 'postgres' │ '2024-11-25 15:25:55.807375' │
+│ 4       │ 5  │ 'undo'       │ 'v3_third.undo.sql'            │ 'postgres' │ '2024-11-25 15:25:56.588007' │
+└─────────┴────┴──────────────┴────────────────────────────────┴────────────┴──────────────────────────────┘
 ```
 
 </details>
@@ -217,7 +250,7 @@ Command:
 npx stepwise-migrations info \
   --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
   --schema=myschema \
-  --path=./db/migration/
+  --path=./test/migrations-template/
 ```
 
 <details>
@@ -225,12 +258,25 @@ npx stepwise-migrations info \
 <summary>Example output</summary>
 
 ```text
-Migration state:
-┌─────────┬────┬────────────────────────────────┬────────────┬──────────────────────────────┐
-│ (index) │ id │ name                           │ applied_by │ applied_at                   │
-├─────────┼────┼────────────────────────────────┼────────────┼──────────────────────────────┤
-│ 0       │ 1  │ 'v1_connect_session_table.sql' │ 'postgres' │ '2024-11-24 05:40:41.211617' │
-└─────────┴────┴────────────────────────────────┴────────────┴──────────────────────────────┘
+All applied versioned migrations:
+┌─────────┬────┬─────────────┬─────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ type        │ filename        │ applied_by │ applied_at                   │
+├─────────┼────┼─────────────┼─────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 1  │ 'versioned' │ 'v1_first.sql'  │ 'postgres' │ '2024-11-25 15:25:55.799253' │
+│ 1       │ 2  │ 'versioned' │ 'v2_second.sql' │ 'postgres' │ '2024-11-25 15:25:55.80306'  │
+└─────────┴────┴─────────────┴─────────────────┴────────────┴──────────────────────────────┘
+All applied repeatable migrations:
+┌─────────┬────┬──────────────┬────────────────────────────────┬────────────┬──────────────────────────────┐
+│ (index) │ id │ type         │ filename                       │ applied_by │ applied_at                   │
+├─────────┼────┼──────────────┼────────────────────────────────┼────────────┼──────────────────────────────┤
+│ 0       │ 4  │ 'repeatable' │ 'v0_get_number.repeatable.sql' │ 'postgres' │ '2024-11-25 15:25:55.807375' │
+└─────────┴────┴──────────────┴────────────────────────────────┴────────────┴──────────────────────────────┘
+Unapplied versioned migrations:
+┌─────────┬─────────────┬────────────────┐
+│ (index) │ type        │ filename       │
+├─────────┼─────────────┼────────────────┤
+│ 0       │ 'versioned' │ 'v3_third.sql' │
+└─────────┴─────────────┴────────────────┘
 ```
 
 </details>
@@ -243,24 +289,22 @@ Can get the script for a specific migration if the `--filename` option is provid
 Command:
 
 ```bash
-npx stepwise-migrations get-applied-script --filename v2_auth.sql \
+npx stepwise-migrations get-applied-script --filename v1_first.sql \
   --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
   --schema=myschema \
-  --path=./db/migration/
+  --path=./test/migrations-template/
 ```
 
 <details>
 
 <summary>Example output</summary>
 
-```sql
-CREATE TABLE "users" (
-	id bigserial primary key,
-	email text unique not null,
-	first_name text not null,
-	last_name text not null,
-	created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+```text
+create table first (
+  id serial primary key,
+  name text not null
 );
+
 ```
 
 </details>
@@ -274,7 +318,8 @@ Command:
 ```bash
 npx stepwise-migrations drop \
   --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydb \
-  --schema=myschema
+  --schema=myschema \
+  --path=./test/migrations-template/
 ```
 
 <details>
@@ -282,7 +327,7 @@ npx stepwise-migrations drop \
 <summary>Example output</summary>
 
 ```text
-Dropping the tables, schema and migration stepwise_migration_events table... done!
+Dropping the tables, schema and migration history table... done!
 ```
 
 </details>

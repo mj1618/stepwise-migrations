@@ -146,7 +146,7 @@ export const eventsToApplied = (
         ) !== event.filename
       ) {
         errors.push(
-          "Events table is in a bad state: down migration does not match the most recently applied migration"
+          "Events table is in a bad state: undo migration does not match the most recently applied migration"
         );
         break;
       } else {
