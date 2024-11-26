@@ -128,6 +128,7 @@ export const readMigrationFiles = async (
 export const printMigrationHistoryAndUnappliedMigrations = (
   state: MigrationState
 ) => {
+  // console.log(JSON.stringify(state, null, 2));
   console.log("All applied versioned migrations:");
   console.table(
     state.current.appliedVersionedMigrations.map((h) => ({
@@ -150,6 +151,9 @@ export const printMigrationHistoryAndUnappliedMigrations = (
       }))
     );
   }
+
+  abortIfErrors(state);
+
   console.log("Unapplied versioned migrations:");
   console.table(
     state.files.unappliedVersionedFiles.map((h) => ({

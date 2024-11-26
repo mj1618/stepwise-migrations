@@ -120,7 +120,7 @@ describe("valid migrations", async () => {
   });
 });
 
-describe.only("invalid migrations", async () => {
+describe("invalid migrations", async () => {
   beforeEach(async () => {
     const { output, error, exitCode } = await executeCommand("drop", "");
     assert.ok(
@@ -164,7 +164,7 @@ describe.only("invalid migrations", async () => {
     ]);
   });
 
-  it.only("bad creds", async () => {
+  it("bad creds", async () => {
     assertIncludesAll(
       await execute(`npm exec stepwise-migrations info -- \\
       --connection=postgresql://postgres:badpassword@127.0.0.1:5432/mydb \\

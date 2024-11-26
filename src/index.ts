@@ -11,23 +11,15 @@ import {
   undoCommand,
   validateCommand,
 } from "./commands";
-import { dbConnect, dbSchemaExists, dbTableExists } from "./db";
+import { dbConnect } from "./db";
 import { usage, validateArgs } from "./utils";
 
 const main = async () => {
   const argv: any = yargs(process.argv.slice(2)).argv;
-
   validateArgs(argv);
 
-  const schema = argv.schema;
   const command = argv._[0];
-  const napply = argv.napply || Infinity;
-  const nundo = argv.nundo || 1;
-  const filePath = argv.path;
-
   const client = await dbConnect(argv);
-  const schemaExists = await dbSchemaExists(client, schema);
-  const tableExists = await dbTableExists(client, schema);
 
   if (command === "migrate") {
     await migrateCommand(client, argv);
