@@ -212,7 +212,10 @@ export const baselineCommand = async (args: Args) => {
   }
 
   const filename =
-    argvFilename ?? state.files.unappliedVersionedFiles[0].filename;
+    argvFilename ??
+    state.files.unappliedVersionedFiles[
+      state.files.unappliedVersionedFiles.length - 1
+    ].filename;
 
   if (
     !state.files.unappliedVersionedFiles.find(
@@ -225,10 +228,16 @@ export const baselineCommand = async (args: Args) => {
     process.exit(1);
   }
 
+  let appliedCount = 0;
   for (const file of state.files.unappliedVersionedFiles) {
     await client.dbBaseline(file);
+    appliedCount++;
     if (file.filename === filename) {
       break;
     }
   }
+
+  console.log(
+    `All done! (Shadow)-applied ${appliedCount} migrations to baseline to ${filename}`
+  );
 };

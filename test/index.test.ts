@@ -41,6 +41,17 @@ describe("valid migrations", async () => {
     assertIncludesAll(await execute("npm exec stepwise-migrations"), ["Usage"]);
   });
 
+  it("baseline", async () => {
+    assertIncludesAll(await executeCommand("baseline", paths.valid), [
+      "All done! (Shadow)-applied 3 migrations to baseline to v3_third.sql",
+    ]);
+    assertIncludesExcludesAll(
+      await executeCommand("status"),
+      ["v1_first.sql", "v2_second.sql", "v3_third.sql"],
+      ["v0_get_number.repeatable.sql"]
+    );
+  });
+
   it("migrate one versioned and undo, redo, undo", async () => {
     assertIncludesAll(await executeCommand("migrate", paths.valid), [
       "All done! Applied 4 migrations",

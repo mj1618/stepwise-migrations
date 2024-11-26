@@ -27,10 +27,12 @@ Commands:
     Drop all tables, schema and stepwise_migration_events table
   get-applied-script
     Get the script for the last applied migration
+  baseline
+    Without applying any migrations, set the migration table state to a specific version
 
 Options:
   --connection <connection>  The connection string to use to connect to the database
-  --schema <schema>          The schema to use for the migrations
+  --schema <schema>          The schema to use for the migrations (default: public)
   --path <path>              The path to the migrations directory
   --ssl true/false           Whether to use SSL for the connection (default: false)
   --napply                   Number of up migrations to apply (default: all)
@@ -39,9 +41,9 @@ Options:
   --filename                 (baseline) The filename to baseline (default: last unapplied versioned migration)
 
 Example:
-  npx stepwise-migrations migrate \\
-    --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase \\
-    --schema=myschema \\
+  npx stepwise-migrations migrate \
+    --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase \
+    --schema=myschema \
     --path=./test/migrations-template/
 `;
 

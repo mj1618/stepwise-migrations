@@ -1,6 +1,6 @@
 {
   "name": "stepwise-migrations",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "description": "A JavaScript CLI tool for managing Raw SQL migrations in a Postgres database. Loosely based on flyway.",
   "main": "./dist/src/index.js",
   "scripts": {
