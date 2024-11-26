@@ -1,6 +1,8 @@
 import fs from "fs/promises";
 import gitDiff from "git-diff";
 import path from "path";
+import { PoolClient } from "pg";
+import { dbSchemaExists, dbTableExists } from "./db";
 import {
   AppliedMigration,
   MigrationFile,
@@ -42,6 +44,16 @@ Example:
     --schema=myschema \\
     --path=./test/migrations-template/
 `;
+
+export const parseArgs = (argv: any) => {
+  const schema = argv.schema;
+  const command = argv._[0];
+  const napply = argv.napply || Infinity;
+  const nundo = argv.nundo || 1;
+  const filePath = argv.path;
+
+  return { schema, command, napply, nundo, filePath };
+};
 
 export const validateArgs = (argv: any) => {
   const required = ["connection", "schema", "path", "_"];
@@ -221,4 +233,13 @@ export const sliceFromFirstNull = <T>(array: (T | undefined)[]): T[] => {
   return indexOfFirstNull < 0
     ? (array as T[])
     : (array.slice(0, indexOfFirstNull) as T[]);
+};
+
+export const checkSchemaAndTable = async (
+  client: PoolClient,
+  schema: string
+) => {
+  const schemaExists = await dbSchemaExists(client, schema);
+  const tableExists = await dbTableExists(client, schema);
+  return { schemaExists, tableExists };
 };
