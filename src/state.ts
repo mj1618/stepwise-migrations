@@ -1,7 +1,6 @@
 import gitDiff from "git-diff";
 import path from "path";
-import { PoolClient } from "pg";
-import { dbEventHistory } from "./db";
+import { DbClient } from "./db";
 import { AppliedMigration, MigrationState } from "./types";
 import { readMigrationFiles } from "./utils";
 
@@ -64,11 +63,10 @@ export const validateMigrationFiles = (state: MigrationState) => {
 };
 
 export const loadState = async (
-  client: PoolClient,
-  schema: string,
+  client: DbClient,
   migrationPath: string
 ): Promise<MigrationState> => {
-  const events = await dbEventHistory(client, schema);
+  const events = await client.dbEventHistory();
   const {
     appliedVersionedMigrations,
     appliedRepeatableMigrations,
@@ -97,7 +95,7 @@ export const loadState = async (
     );
 
   return {
-    schema,
+    schema: client.schema,
     current: {
       appliedVersionedMigrations,
       appliedRepeatableMigrations,

@@ -3,6 +3,7 @@
 import yargs from "yargs";
 import {
   auditCommand,
+  baselineCommand,
   dropCommand,
   getAppliedScriptCommand,
   infoCommand,
@@ -11,39 +12,40 @@ import {
   undoCommand,
   validateCommand,
 } from "./commands";
-import { dbConnect } from "./db";
-import { usage, validateArgs } from "./utils";
+import { parseArgs, usage, validateArgs } from "./utils";
 
 const main = async () => {
   const argv: any = yargs(process.argv.slice(2)).argv;
-  validateArgs(argv);
 
-  const command = argv._[0];
-  const client = await dbConnect(argv);
+  const args = parseArgs(argv);
+  validateArgs(args);
+
+  const command = args.command;
 
   if (command === "migrate") {
-    await migrateCommand(client, argv);
+    await migrateCommand(args);
   } else if (command === "info") {
-    await infoCommand(client, argv);
+    await infoCommand(args);
   } else if (command === "status") {
-    await statusCommand(client, argv);
+    await statusCommand(args);
   } else if (command === "validate") {
-    await validateCommand(client, argv);
+    await validateCommand(args);
   } else if (command === "drop") {
-    await dropCommand(client, argv);
+    await dropCommand(args);
   } else if (command === "undo") {
-    await undoCommand(client, argv);
+    await undoCommand(args);
   } else if (command === "audit") {
-    await auditCommand(client, argv);
+    await auditCommand(args);
   } else if (command === "get-applied-script") {
-    await getAppliedScriptCommand(client, argv);
+    await getAppliedScriptCommand(args);
+  } else if (command === "baseline") {
+    await baselineCommand(args);
   } else {
     console.error(`Invalid command: ${command}`);
     console.log(usage);
     process.exit(1);
   }
 
-  client.release();
   process.exit(0);
 };
 

@@ -82,7 +82,7 @@ Commands:
 
 Options:
   --connection <connection>  The connection string to use to connect to the database
-  --schema <schema>          The schema to use for the migrations
+  --schema <schema>          The schema to use for the migrations (default: public)
   --path <path>              The path to the migrations directory
   --ssl true/false           Whether to use SSL for the connection (default: false)
   --napply                   Number of up migrations to apply (default: all)

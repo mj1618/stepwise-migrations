@@ -1,38 +1,31 @@
-import { PoolClient } from "pg";
-import {
-  applyMigration,
-  applyUndoMigration,
-  dbCreateEventsTable,
-  dbCreateSchema,
-  dbDropAll,
-  dbGetAppliedScript,
-} from "./db";
+import assert from "node:assert";
+import { DbClient, dbConnect } from "./db";
 import { getUndoFilename, loadState } from "./state";
 import {
   abortIfErrors,
+  Args,
   checkSchemaAndTable,
   exitIfNotInitialized,
-  parseArgs,
   printMigrationHistory,
   printMigrationHistoryAndUnappliedMigrations,
   sliceFromFirstNull,
 } from "./utils";
 
-export const migrateCommand = async (client: PoolClient, argv: any) => {
-  const { schema, napply, filePath } = parseArgs(argv);
-  const { schemaExists, tableExists } = await checkSchemaAndTable(
-    client,
-    schema
-  );
-
+export const ensureTableInitialised = async (client: DbClient) => {
+  const { schemaExists, tableExists } = await checkSchemaAndTable(client);
   if (!schemaExists) {
-    await dbCreateSchema(client, schema);
+    await client.dbCreateSchema();
   }
   if (!tableExists) {
-    await dbCreateEventsTable(client, schema);
+    await client.dbCreateEventsTable();
   }
+};
 
-  const state = await loadState(client, schema, filePath);
+export const migrateCommand = async (args: Args) => {
+  const { napply, filePath } = args;
+  const client = await dbConnect(args);
+  await ensureTableInitialised(client);
+  const state = await loadState(client, filePath);
 
   abortIfErrors(state);
 
@@ -50,7 +43,7 @@ export const migrateCommand = async (client: PoolClient, argv: any) => {
   ].slice(0, napply);
 
   for (const migration of migrationsToApply) {
-    await applyMigration(client, schema, migration);
+    await client.dbApplyMigration(migration);
   }
 
   console.log(
@@ -60,16 +53,14 @@ export const migrateCommand = async (client: PoolClient, argv: any) => {
   );
 
   printMigrationHistoryAndUnappliedMigrations(
-    await loadState(client, schema, filePath)
+    await loadState(client, filePath)
   );
 };
 
-export const infoCommand = async (client: PoolClient, argv: any) => {
-  const { schema, filePath } = parseArgs(argv);
-  const { schemaExists, tableExists } = await checkSchemaAndTable(
-    client,
-    schema
-  );
+export const infoCommand = async (args: Args) => {
+  const { connection, schema, filePath } = args;
+  const client = await dbConnect(args);
+  const { schemaExists, tableExists } = await checkSchemaAndTable(client);
 
   if (!schemaExists) {
     console.log("Schema does not exist");
@@ -83,17 +74,15 @@ export const infoCommand = async (client: PoolClient, argv: any) => {
 
   if (schemaExists && tableExists) {
     printMigrationHistoryAndUnappliedMigrations(
-      await loadState(client, schema, filePath)
+      await loadState(client, filePath)
     );
   }
 };
 
-export const statusCommand = async (client: PoolClient, argv: any) => {
-  const { schema, filePath } = parseArgs(argv);
-  const { schemaExists, tableExists } = await checkSchemaAndTable(
-    client,
-    schema
-  );
+export const statusCommand = async (args: Args) => {
+  const { connection, schema, filePath } = args;
+  const client = await dbConnect(args);
+  const { schemaExists, tableExists } = await checkSchemaAndTable(client);
   if (!schemaExists) {
     console.log("Schema does not exist");
   }
@@ -105,19 +94,17 @@ export const statusCommand = async (client: PoolClient, argv: any) => {
   }
 
   if (schemaExists && tableExists) {
-    printMigrationHistory(await loadState(client, schema, filePath));
+    printMigrationHistory(await loadState(client, filePath));
   }
 };
 
-export const validateCommand = async (client: PoolClient, argv: any) => {
-  const { schema } = parseArgs(argv);
-  const { schemaExists, tableExists } = await checkSchemaAndTable(
-    client,
-    schema
-  );
+export const validateCommand = async (args: Args) => {
+  const { connection, schema, filePath } = args;
+  const client = await dbConnect(args);
+  const { schemaExists, tableExists } = await checkSchemaAndTable(client);
   exitIfNotInitialized(schemaExists, tableExists);
 
-  const state = await loadState(client, schema, argv.path);
+  const state = await loadState(client, filePath);
   if (schemaExists && tableExists) {
     abortIfErrors(state);
   }
@@ -126,18 +113,20 @@ export const validateCommand = async (client: PoolClient, argv: any) => {
   printMigrationHistoryAndUnappliedMigrations(state);
 };
 
-export const dropCommand = async (client: PoolClient, argv: any) => {
-  const { schema } = parseArgs(argv);
+export const dropCommand = async (args: Args) => {
+  const { connection, schema } = args;
+  const client = await dbConnect(args);
   process.stdout.write(
     `Dropping the tables, schema and migration history table... `
   );
-  await dbDropAll(client, schema);
+  await client.dbDropAll();
   console.log(`done!`);
 };
 
-export const undoCommand = async (client: PoolClient, argv: any) => {
-  const { schema, nundo, filePath } = parseArgs(argv);
-  const state = await loadState(client, schema, filePath);
+export const undoCommand = async (args: Args) => {
+  const { connection, schema, filePath, nundo } = args;
+  const client = await dbConnect(args);
+  const state = await loadState(client, filePath);
 
   abortIfErrors(state);
 
@@ -160,7 +149,7 @@ export const undoCommand = async (client: PoolClient, argv: any) => {
   }
 
   for (const { filename, script } of undosToApply) {
-    await applyUndoMigration(client, schema, filename, script);
+    await client.dbApplyUndoMigration(filename, script);
   }
   console.log(
     `All done! Performed ${undosToApply.length} undo migration${
@@ -171,16 +160,14 @@ export const undoCommand = async (client: PoolClient, argv: any) => {
   printMigrationHistoryAndUnappliedMigrations(state);
 };
 
-export const auditCommand = async (client: PoolClient, argv: any) => {
-  const { schema } = parseArgs(argv);
-  const { schemaExists, tableExists } = await checkSchemaAndTable(
-    client,
-    schema
-  );
+export const auditCommand = async (args: Args) => {
+  const { connection, schema, filePath } = args;
+  const client = await dbConnect(args);
+  const { schemaExists, tableExists } = await checkSchemaAndTable(client);
 
   exitIfNotInitialized(schemaExists, tableExists);
 
-  const state = await loadState(client, schema, argv.path);
+  const state = await loadState(client, filePath);
   console.log("Event history:");
   console.table(
     state.events.map((row) => ({
@@ -193,25 +180,55 @@ export const auditCommand = async (client: PoolClient, argv: any) => {
   );
 };
 
-export const getAppliedScriptCommand = async (
-  client: PoolClient,
-  argv: any
-) => {
-  const { schema } = parseArgs(argv);
-  const { schemaExists, tableExists } = await checkSchemaAndTable(
-    client,
-    schema
-  );
+export const getAppliedScriptCommand = async (args: Args) => {
+  const { connection, schema, filePath, filename } = args;
+  assert.ok(filename, "filename is required for this command");
+  const client = await dbConnect(args);
+  const { schemaExists, tableExists } = await checkSchemaAndTable(client);
 
   exitIfNotInitialized(schemaExists, tableExists);
 
-  const state = await loadState(client, schema, argv.path);
-  const script = await dbGetAppliedScript(state, argv.filename);
+  const state = await loadState(client, filePath);
+  const script = await client.dbGetAppliedScript(state, filename);
   if (script) {
     console.log(script);
   } else {
     console.error(
-      `Script for ${argv.filename} not found, use the audit command to check all applied migrations`
+      `Script for ${filename} not found, use the audit command to check all applied migrations`
     );
+  }
+};
+
+export const baselineCommand = async (args: Args) => {
+  const { connection, schema, filePath, filename: argvFilename } = args;
+  const client = await dbConnect(args);
+  await ensureTableInitialised(client);
+
+  const state = await loadState(client, filePath);
+
+  if (state.files.unappliedVersionedFiles.length === 0) {
+    console.error("Error: No unapplied versioned migrations, aborting.");
+    process.exit(1);
+  }
+
+  const filename =
+    argvFilename ?? state.files.unappliedVersionedFiles[0].filename;
+
+  if (
+    !state.files.unappliedVersionedFiles.find(
+      (file) => file.filename === filename
+    )
+  ) {
+    console.error(
+      `Error: '${filename}' is not an unapplied versioned migration, aborting.`
+    );
+    process.exit(1);
+  }
+
+  for (const file of state.files.unappliedVersionedFiles) {
+    await client.dbBaseline(file);
+    if (file.filename === filename) {
+      break;
+    }
   }
 };

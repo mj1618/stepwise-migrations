@@ -1,8 +1,7 @@
 import fs from "fs/promises";
 import gitDiff from "git-diff";
 import path from "path";
-import { PoolClient } from "pg";
-import { dbSchemaExists, dbTableExists } from "./db";
+import { DbClient } from "./db";
 import {
   AppliedMigration,
   MigrationFile,
@@ -36,7 +35,8 @@ Options:
   --ssl true/false           Whether to use SSL for the connection (default: false)
   --napply                   Number of up migrations to apply (default: all)
   --nundo                    Number of undo migrations to apply (default: 1)
-  --filename                 The filename to get the script for (default: last applied migration)
+  --filename                 (get-applied-script) The filename to get the script for (default: last applied migration)
+  --filename                 (baseline) The filename to baseline (default: last unapplied versioned migration)
 
 Example:
   npx stepwise-migrations migrate \\
@@ -45,28 +45,46 @@ Example:
     --path=./test/migrations-template/
 `;
 
-export const parseArgs = (argv: any) => {
+export type Args = {
+  schema: string;
+  command: string;
+  napply: number;
+  nundo: number;
+  filePath: string;
+  connection: string;
+  filename?: string;
+  ssl: string;
+};
+
+export const parseArgs = (argv: any): Args => {
   const schema = argv.schema ?? "public";
   const command = argv._[0];
   const napply = argv.napply || Infinity;
   const nundo = argv.nundo || 1;
   const filePath = argv.path;
+  const connection = argv.connection;
+  const ssl = argv.ssl ?? "false";
+  const filename = argv.filename;
 
-  return { schema, command, napply, nundo, filePath };
+  return {
+    schema,
+    command,
+    napply,
+    nundo,
+    filePath,
+    connection,
+    ssl,
+    filename,
+  };
 };
 
-export const validateArgs = (argv: any) => {
-  const required = ["connection", "path", "_"];
-  if (required.some((key) => !(key in argv))) {
+export const validateArgs = (args: Args) => {
+  const required = ["connection", "filePath", "command"];
+  if (required.some((key) => !(key in args))) {
     console.error(
       "Missing required arguments",
-      required.filter((key) => !(key in argv))
+      required.filter((key) => !(key in args))
     );
-    console.log(usage);
-    process.exit(1);
-  }
-  if (argv._.length !== 1) {
-    console.error(`Invalid number of arguments: ${argv._.length}`);
     console.log(usage);
     process.exit(1);
   }
@@ -239,11 +257,8 @@ export const sliceFromFirstNull = <T>(array: (T | undefined)[]): T[] => {
     : (array.slice(0, indexOfFirstNull) as T[]);
 };
 
-export const checkSchemaAndTable = async (
-  client: PoolClient,
-  schema: string
-) => {
-  const schemaExists = await dbSchemaExists(client, schema);
-  const tableExists = await dbTableExists(client, schema);
+export const checkSchemaAndTable = async (client: DbClient) => {
+  const schemaExists = await client.dbSchemaExists();
+  const tableExists = await client.dbTableExists();
   return { schemaExists, tableExists };
 };
