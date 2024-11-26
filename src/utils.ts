@@ -46,7 +46,7 @@ Example:
 `;
 
 export const parseArgs = (argv: any) => {
-  const schema = argv.schema;
+  const schema = argv.schema ?? "public";
   const command = argv._[0];
   const napply = argv.napply || Infinity;
   const nundo = argv.nundo || 1;
@@ -56,7 +56,7 @@ export const parseArgs = (argv: any) => {
 };
 
 export const validateArgs = (argv: any) => {
-  const required = ["connection", "schema", "path", "_"];
+  const required = ["connection", "path", "_"];
   if (required.some((key) => !(key in argv))) {
     console.error(
       "Missing required arguments",
