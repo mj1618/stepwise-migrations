@@ -3,8 +3,8 @@
 A JavaScript CLI tool for managing Raw SQL migrations in a Postgres database.
 Loosely based on flyway.
 
-[![npm version](https://badge.fury.io/js/stepwise-migrations.svg?icon=si%3Anpm&)](https://badge.fury.io/js/stepwise-migrations)
-![test workflow](https://github.com/github/docs/actions/workflows/test.yml/badge.svg)
+![NPM Version](https://img.shields.io/npm/v/stepwise-migrations)
+![Test Workflow](https://github.com/github/docs/actions/workflows/test.yml/badge.svg)
 
 ## Table of Contents
 
