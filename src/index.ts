@@ -105,13 +105,14 @@ const main = async () => {
     })
     .example([
       [
-        `npx stepwise-migrations migrate \
-    --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase \
-    --schema=myschema \
-    --path=./test/migrations-template/`,
+        `npx stepwise-migrations migrate \\
+      --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase \\
+      --schema=myschema \\
+      --path=./test/migrations-template/`,
         "Migrate the database to the latest version",
       ],
     ])
+    .wrap(yargs.terminalWidth())
     .demandCommand(1)
     .recommendCommands()
     .strict()
