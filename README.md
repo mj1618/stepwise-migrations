@@ -62,7 +62,7 @@ There are three types of migrations:
 ## Usage
 
 ```text
-Usage: stepwise-migrations [command] [options]
+Usage: stepwise-migrations <command> [options]
 
 Commands:
   migrate

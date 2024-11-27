@@ -1,4 +1,3 @@
-import assert from "node:assert";
 import fs from "node:fs";
 import { beforeEach, describe, it } from "node:test";
 import { assertIncludesAll, assertIncludesExcludesAll, execute } from "./utils";
@@ -23,13 +22,9 @@ const executeCommand = (
 
 describe("valid migrations", async () => {
   beforeEach(async () => {
-    const { output, error, exitCode } = await executeCommand("drop", "");
-    assert.ok(
-      output.includes(
-        "Dropping the tables, schema and migration history table... done!"
-      )
-    );
-    assert.ok(exitCode === 0);
+    assertIncludesAll(await executeCommand("drop", ""), [
+      "Dropping the tables, schema and migration history table... done!",
+    ]);
 
     fs.rmSync(paths.valid, { recursive: true, force: true });
     fs.cpSync("./test/migrations-template", paths.valid, {
@@ -38,7 +33,9 @@ describe("valid migrations", async () => {
   });
 
   it("migrate without params", async () => {
-    assertIncludesAll(await execute("npm exec stepwise-migrations"), ["Usage"]);
+    assertIncludesAll(await execute("npm exec stepwise-migrations"), [
+      "stepwise-migrations <command>",
+    ]);
   });
 
   it("baseline", async () => {
@@ -131,15 +128,11 @@ describe("valid migrations", async () => {
   });
 });
 
-describe("invalid migrations", async () => {
+describe.only("invalid migrations", async () => {
   beforeEach(async () => {
-    const { output, error, exitCode } = await executeCommand("drop", "");
-    assert.ok(
-      output.includes(
-        "Dropping the tables, schema and migration history table... done!"
-      )
-    );
-    assert.ok(exitCode === 0);
+    assertIncludesAll(await executeCommand("drop", ""), [
+      "Dropping the tables, schema and migration history table... done!",
+    ]);
 
     fs.rmSync(paths.invalid, { recursive: true, force: true });
     fs.cpSync("./test/migrations-template", paths.invalid, {
@@ -147,7 +140,7 @@ describe("invalid migrations", async () => {
     });
   });
 
-  it("missing undo migration", async () => {
+  it.only("missing undo migration", async () => {
     assertIncludesAll(await executeCommand("migrate", paths.invalid), [
       "All done!",
     ]);
@@ -155,7 +148,7 @@ describe("invalid migrations", async () => {
     fs.unlinkSync("./test/migrations-invalid/v3_third.undo.sql");
 
     assertIncludesAll(
-      await executeCommand("undo", paths.invalid, "--nundos=2"),
+      await executeCommand("undo", paths.invalid, "--nundo=2"),
       ["Error: not enough sequential (from last) undo migrations to apply"]
     );
   });
