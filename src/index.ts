@@ -91,11 +91,6 @@ const main = async () => {
         alias: "s",
         describe: "The schema to use for the migrations",
       },
-      ssl: {
-        type: "boolean",
-        default: false,
-        describe: "Whether to use SSL for the connection",
-      },
       path: {
         type: "string",
         default: "./",

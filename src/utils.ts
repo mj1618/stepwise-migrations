@@ -34,7 +34,6 @@ Options:
   --connection <connection>  The connection string to use to connect to the database
   --schema <schema>          The schema to use for the migrations (default: public)
   --path <path>              The path to the migrations directory
-  --ssl true/false           Whether to use SSL for the connection (default: false)
   --napply                   Number of up migrations to apply (default: all)
   --nundo                    Number of undo migrations to apply (default: 1)
   --filename                 (get-applied-script) The filename to get the script for (default: last applied migration)
@@ -42,7 +41,7 @@ Options:
 
 Example:
   npx stepwise-migrations migrate \
-    --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase \
+    --connection=postgresql://postgres:postgres@127.0.0.1:5432/mydatabase\?sslmode=require \
     --schema=myschema \
     --path=./test/migrations-template/
 `;
@@ -55,7 +54,6 @@ export type Args = {
   filePath: string;
   connection: string;
   filename?: string;
-  ssl: string;
 };
 
 export const parseArgs = (argv: any): Args => {
@@ -65,7 +63,6 @@ export const parseArgs = (argv: any): Args => {
   const nundo = argv.nundo || 1;
   const filePath = argv.path;
   const connection = argv.connection;
-  const ssl = argv.ssl ?? "false";
   const filename = argv.filename;
 
   return {
@@ -75,7 +72,6 @@ export const parseArgs = (argv: any): Args => {
     nundo,
     filePath,
     connection,
-    ssl,
     filename,
   };
 };

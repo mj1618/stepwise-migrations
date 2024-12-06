@@ -10,10 +10,9 @@ pg.types.setTypeParser(1082, function (stringValue) {
   return stringValue; //1082 for date type
 });
 
-export const _dbConnect = async ({ ssl, connection, schema }: Args) => {
+export const _dbConnect = async ({ connection, schema }: Args) => {
   const pool = new Pool({
     connectionString: connection,
-    ssl: ssl === "true",
   });
 
   let client: PoolClient | undefined;
